@@ -3,4 +3,4 @@
 ## Required Software
 [Python 3.x](https://www.python.org/downloads/)
 
-[TWS API for python](http://interactivebrokers.github.io/tws-api/#gsc.tab=0)
+[*LATEST* TWS API for python](http://interactivebrokers.github.io/downloads/TWS%20API%20Install%20973.06.msi)
