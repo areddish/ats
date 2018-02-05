@@ -16,6 +16,7 @@ tickers_that_need_primary_exchange = {
 
 class Stock(Contract):
     def __init__(self, symbol):
+        super().__init__()
         self.symbol = symbol
         self.secType = "STK"
         if symbol in tickers_that_need_primary_exchange:
