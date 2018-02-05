@@ -20,4 +20,3 @@ class Stock(Contract):
         self.secType = "STK"
         if symbol in tickers_that_need_primary_exchange:
             self.primaryExchange = tickers_that_need_primary_exchange[symbol]
-    

@@ -11,5 +11,6 @@ class TestAssets(unittest.TestCase):
         s = stock.Stock("MSFT")
         self.assertEqual(s.symbol, "MSFT")
 
+
 if "__main__" == __name__:
     unittest.main()
