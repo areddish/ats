@@ -1,3 +1,4 @@
+import datetime
 from ibapi.contract import *
 
 # These symbols require an exchange to be set otherwise we get an error since there
@@ -13,11 +14,40 @@ tickers_that_need_primary_exchange = {
     "INTC": "NASDAQ"
 }
 
-
 class Stock(Contract):
     def __init__(self, symbol):
         super().__init__()
         self.symbol = symbol
         self.secType = "STK"
+        self.exchange = "SMART"
         if symbol in tickers_that_need_primary_exchange:
             self.primaryExchange = tickers_that_need_primary_exchange[symbol]
+
+class Index(Contract):
+    def __init__(self, symbol, exchange="CBOE"):
+        super().__init__()
+        self.symbol = symbol
+        self.secType = "IND"
+        self.exchange = exchange
+
+class Option(Contract):
+    def __init__(self, underlying, expiry):
+        super().__init__()
+        self.symbol = underlying
+        self.secType = "OPT"
+
+class Future(Contract):
+    def __init__(self, symbol):
+        super().__init__()
+        self.symbol = symbol
+        self.secType = "FUT"
+
+class Forex(Contract):
+    def __init__(self, symbol):
+        super().__init__()
+        self.symbol = symbol
+        self.secType = "CASH"
+
+
+SP500 = Index("SPX")
+Dow = Index("DJI")

@@ -1,16 +1,24 @@
 import unittest
-from ats.assets import stock
-
+import datetime
+from ats.assets import Stock, Future, Option, Forex, Index
 
 class TestAssets(unittest.TestCase):
     def test_primaryExchange(self):
-        s = stock.Stock("MSFT")
+        s = Stock("MSFT")
         self.assertEqual(s.primaryExchange, "NASDAQ")
 
     def test_symbol(self):
-        s = stock.Stock("MSFT")
+        s = Stock("MSFT")
         self.assertEqual(s.symbol, "MSFT")
 
 
+    def test_securityType(self):
+        self.assertEqual(Stock("MSFT").secType, "STK")
+        self.assertEqual(Index("SPX").secType, "IND")
+        self.assertEqual(Option("MSFT", expiry=datetime.date.today()).secType, "OPT")
+        self.assertEqual(Future("ESH8").secType, "FUT")
+        self.assertEqual(Forex("USD.JPY").secType, "CASH")
+
 if "__main__" == __name__:
     unittest.main()
+
