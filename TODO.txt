@@ -1,0 +1,46 @@
+ATS
+
+ORDER
+
+Create order system
+ - pull current orders
+ - create and execute various order types
+    Market
+    Bracket
+    Limit
+
+ACCOUNT
+Create account manager
+ - pull current account info
+
+INDICATORS
+Integrate Talib
+Create indicators for Moving average and Bollinger bands
+
+STRATEGY
+Create strategy system and runner
+ - ability to run strategy on tick
+ - ability to run strategy on bar
+ - ability to have strategy open a position
+ - ability to have strategy close a position
+
+PREDICTIVE
+
+Create idea generator system
+ - scan all vertical spreads
+ - compute resistance / support
+
+Integrate neural network system
+
+TOOLS
+
+DATA COLLECTORS
+Create scraper to get earnings/dividend
+
+DASHBOARD
+
+Create backend to display dashboard
+    Display a Trade log
+    Display Account history
+    Display output of Idea generator
+    Display output of Neural network prediction
