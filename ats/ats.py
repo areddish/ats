@@ -1,8 +1,13 @@
 
 from ibapi import wrapper
 from ibapi.client import EClient
+from ibapi.contract import ContractDetails
 
+from assets import *
+import order
 
+from threading import Thread, Event
+import logging
 import argparse
 
 
@@ -13,17 +18,41 @@ class BrokerPlatform(wrapper.EWrapper, EClient):
         self.client_id = client_id
         self.port = port
 
-    def run(self):
-        super().connect("127.0.0.1", self.port, self.client_id)
+    def error(self, reqId:int, errorCode:int, errorString:str):
+        super().error(reqId, errorCode, errorString)
+        pass
 
-    def connectAck(self):
+    def connect(self):
+        super().connect("127.0.0.1", self.port, self.client_id)
+        self.thread = Thread(target = self.run)
+        self.thread.start()
+
+    def connectAck(self):        
         print ("Connected!")
+
+    def nextValidId(self, orderId: int):
+        super().nextValidId(orderId)
+
+#        logging.debug("setting nextValidOrderId: %d", orderId)
+        order.next_valid_order_id = orderId
+
+    def find_contract(self, symbol):
+        asset = Stock(symbol)
+        self.reqContractDetails(33, asset)
+
+    def contractDetails(self, reqId:int, contractDetails:ContractDetails):
+        super.contractDetails(reqId, contractDetails)
+        pass
+
+    def contractDetailsEnd(self, reqId:int):
+        super.contractDetailsEnd(reqId)
+        pass
 
 if "__main__" == __name__:
     print ("Starting up...")
 
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("-p", "--port", action="store", type=int, help="TCP port to connect to", dest="port", default=7497)
+    arg_parser.add_argument("-p", "--port", action="store", type=int, help="TCP port to connect to", dest="port", default=7496)
     arg_parser.add_argument("-id", "--id", action="store", type=int, help="Client ID", dest="id", default=1026)
 
     args = arg_parser.parse_args()
@@ -32,4 +61,15 @@ if "__main__" == __name__:
     print("Connecting to port: ",args.port)
 
     trader = BrokerPlatform(args.port, args.id)
-    trader.run()
+    trader.connect()
+
+    trader.find_contract("AAPL")
+
+    sym = "a"
+    while (sym != "" and trader.isConnected()):
+        print ("Enter symbol")
+        sym = input()
+        trader.find_contract(sym)
+        ## look up sym
+    
+    trader.disconnect()
