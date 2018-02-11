@@ -2,16 +2,21 @@ from ibapi.contract import Contract
 from ibapi.order import Order
 from enum import Enum
 
-next_order_id = 1
-
-def get_next_order_id():
-    result = next_order_id
-    next_order_id += 1
-    return result
 
 class OrderType(Enum):
     BUY = 1
     SELL = 2
+
+
+next_order_id = 1
+
+
+def get_next_order_id():
+    global next_order_id
+    result = next_order_id
+    next_order_id += 1
+    return result
+
 
 def create_order(qty, type):
     order = Order()
@@ -21,10 +26,12 @@ def create_order(qty, type):
     order.transmit = True
     return order
 
+
 def create_market_order(qty, type):
     order = create_order(qty, type)
     order.orderType = "MKT"
     return order
+
 
 def create_limit_order(qty, type, price):
     order = create_order(qty, type)
@@ -32,11 +39,13 @@ def create_limit_order(qty, type, price):
     order.lmtPrice = price
     return order
 
+
 def create_stop_order(qty, type, price):
     order = create_order(qty, type)
     order.orderType = "STP"
-    order.lmtPrice = price    
+    order.lmtPrice = price
     return order
+
 
 def create_bracket_order(qty, type, profit_price, stop_loss_price):
     market_order = create_market_order(qty, OrderType.BUY)
@@ -49,4 +58,4 @@ def create_bracket_order(qty, type, profit_price, stop_loss_price):
     profit_taker_order.parentId = market_order.orderId
     stop_loss_order.parentId = market_order.orderId
 
-    return [ market_order, profit_taker_order, stop_loss_order ]   
+    return [market_order, profit_taker_order, stop_loss_order]
