@@ -43,7 +43,7 @@ def create_limit_order(qty, type, price):
 def create_stop_order(qty, type, price):
     order = create_order(qty, type)
     order.orderType = "STP"
-    order.lmtPrice = price
+    order.auxPrice = price
     return order
 
 
