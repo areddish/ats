@@ -1,7 +1,5 @@
-from ats.assets import Stock
 from ibapi.order import Order
 from enum import Enum
-
 
 class OrderType(Enum):
     BUY = 1
