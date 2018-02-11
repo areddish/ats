@@ -3,7 +3,7 @@ from ibapi.client import EClient
 from ibapi.contract import ContractDetails
 
 from assets import *
-import order
+import orders
 
 from threading import Thread, Event
 import logging
@@ -31,20 +31,23 @@ class BrokerPlatform(wrapper.EWrapper, EClient):
 
     def nextValidId(self, orderId: int):
         super().nextValidId(orderId)
+        orders.next_valid_order_id = orderId
 
-#        logging.debug("setting nextValidOrderId: %d", orderId)
-        order.next_valid_order_id = orderId
+        # Until we get this notification we aren't really ready to run
+        # the rest of the system live.
+        #
+        # Now we are ready and really connected.
 
     def find_contract(self, symbol):
         asset = Stock(symbol)
         self.reqContractDetails(33, asset)
 
     def contractDetails(self, reqId:int, contractDetails:ContractDetails):
-        super.contractDetails(reqId, contractDetails)
+        super().contractDetails(reqId, contractDetails)
         pass
 
     def contractDetailsEnd(self, reqId:int):
-        super.contractDetailsEnd(reqId)
+        super().contractDetailsEnd(reqId)
         pass
 
 if "__main__" == __name__:
