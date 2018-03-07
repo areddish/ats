@@ -16,11 +16,14 @@ tickers_that_need_primary_exchange = {
 
 
 class Stock(Contract):
-    def __init__(self, symbol):
+    def __init__(self, symbol, primaryExchange=None, currency="USD"):
         super().__init__()
         self.symbol = symbol
         self.secType = "STK"
         self.exchange = "SMART"
+        self.currency = currency
+        if primaryExchange != None:
+            self.primaryExchange = primaryExchange
         if symbol in tickers_that_need_primary_exchange:
             self.primaryExchange = tickers_that_need_primary_exchange[symbol]
 
@@ -45,6 +48,9 @@ class Future(Contract):
         super().__init__()
         self.symbol = symbol
         self.secType = "FUT"
+        self.currency = "USD"
+        self.lastTradeDateOrContractMonth = "201803"
+        self.primaryExchange = "GLOBEX"
 
 
 class Forex(Contract):
