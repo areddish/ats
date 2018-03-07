@@ -1,0 +1,10 @@
+
+FROM python
+
+ADD . /app
+
+RUN pip install -r /app/requirements.txt
+
+# Set the working directory
+WORKDIR /app
+
