@@ -1,8 +1,5 @@
-tensorflow==1.5.0
-pillow==5.0.0
-scipy==1.0.0
-numpy==1.14.1
-flask==0.12.2
+tensorflow
+numpy
 pandas
 keras
 h5py

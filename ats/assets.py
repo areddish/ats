@@ -44,13 +44,14 @@ class Option(Contract):
 
 
 class Future(Contract):
-    def __init__(self, symbol):
+    def __init__(self, symbol, exchange=""):
         super().__init__()
         self.symbol = symbol
         self.secType = "FUT"
         self.currency = "USD"
-        self.lastTradeDateOrContractMonth = "201803"
+        #self.lastTradeDateOrContractMonth = "201803"
         self.primaryExchange = "GLOBEX"
+        self.exchange = exchange
 
 
 class Forex(Contract):
