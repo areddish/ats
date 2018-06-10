@@ -36,8 +36,8 @@ class BrokerPlatform(EWrapper, EClient):
         super().winError(text, lastError)
         pass
 
-    def connect(self):
-        super().connect("127.0.0.1", self.port, self.client_id)
+    def connect(self, host="127.0.0.1"):
+        super().connect(host, self.port, self.client_id)
         self.thread = Thread(target=self.run)
         self.thread.start()
         self.connect_event = Event()
@@ -65,8 +65,17 @@ class BrokerPlatform(EWrapper, EClient):
     def contractDetails(self, reqId: int, contractDetails: ContractDetails):
         super().contractDetails(reqId, contractDetails)
         print(contractDetails.summary.symbol,
-              contractDetails.contractMonth, contractDetails.summary.conId)
-        pass
+              contractDetails.contractMonth, contractDetails.summary.conId, contractDetails)
+        
+        print(contractDetails.marketName)
+        print(contractDetails.validExchanges)
+        print(contractDetails.priceMagnifier)
+        print(contractDetails.longName)
+        print(contractDetails.industry)
+        print(contractDetails.subcategory)
+        print(contractDetails.tradingHours)
+        print(contractDetails.liquidHours)
+        print(contractDetails.summary)        
 
     def contractDetailsEnd(self, reqId: int):
         super().contractDetailsEnd(reqId)
@@ -132,17 +141,18 @@ if "__main__" == __name__:
     trader = BrokerPlatform(args.port, args.id, args.data_dir)
     trader.connect()
 
-    trader.find_contract(Stock("AAPL"))
+    for sym in ["AAPL", "TNA", "MSFT", "SPY", "TSLA", "BAC", "AMZN"]:
+        trader.find_contract(Stock(sym))
 
     #trader.reqMktData(12, Stock("SPY"), "", False, False, [])
 
-    print("requesting bars")
-    trader.reqRealTimeBars(1, SP500, 5, "TRADES", True, [])
-    trader.reqRealTimeBars(2, Stock("SPY"), 5, "TRADES", True, [])
-    trader.reqRealTimeBars(3, Stock("TNA"), 5, "TRADES", True, [])
-    #trader.reqRealTimeBars(23, Stock("MSFT"), 5, "BID", True, [])
-    #trader.reqRealTimeBars(24, Stock("AAPL"), 5, "TRADES", True, [])
-    #trader.reqRealTimeBars(25, Future("ES"), 5, "TRADES", True, [])
+    # print("requesting bars")
+    # trader.reqRealTimeBars(1, SP500, 5, "TRADES", True, [])
+    # trader.reqRealTimeBars(2, Stock("SPY"), 5, "TRADES", True, [])
+    # trader.reqRealTimeBars(3, Stock("TNA"), 5, "TRADES", True, [])
+    # #trader.reqRealTimeBars(23, Stock("MSFT"), 5, "BID", True, [])
+    # #trader.reqRealTimeBars(24, Stock("AAPL"), 5, "TRADES", True, [])
+    trader.reqRealTimeBars(25, Future("ES"), 5, "TRADES", True, [])
 
     try:
         sym = "a"
