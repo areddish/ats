@@ -49,7 +49,7 @@ class Future(Contract):
         self.symbol = symbol
         self.secType = "FUT"
         self.currency = "USD"
-        #self.lastTradeDateOrContractMonth = "201803"
+        self.lastTradeDateOrContractMonth = "201806"
         self.primaryExchange = "GLOBEX"
         self.exchange = exchange
 
