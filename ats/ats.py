@@ -14,6 +14,8 @@ import argparse
 import os
 import time
 
+import pickle
+
 bars = 0
 
 
@@ -76,6 +78,8 @@ class BrokerPlatform(EWrapper, EClient):
         print(contractDetails.tradingHours)
         print(contractDetails.liquidHours)
         print(contractDetails.summary)        
+
+        pickle.dump(contractDetails, open(contractDetails.summary.symbol, "wt"))
 
     def contractDetailsEnd(self, reqId: int):
         super().contractDetailsEnd(reqId)
