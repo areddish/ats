@@ -1,0 +1,15 @@
+import numpy as np
+from talib import BBANDS
+from talib import EMA
+
+values = np.arange(2,40,0.5)
+np.shuffle(values)
+
+upper, avg, lower = BBANDS(values, timeperiod=24, nbdevup = 2, nbdevdn = 2, matype = 0)
+
+import matplotlib.pyplot as plt
+plt.plot(upper)
+plt.plot(avg)
+plt.plot(lower)
+plt.plot(values)
+plot.show()
