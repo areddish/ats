@@ -79,7 +79,7 @@ class BrokerPlatform(EWrapper, EClient):
         print(contractDetails.liquidHours)
         print(contractDetails.summary)        
 
-        pickle.dump(contractDetails, open(contractDetails.summary.symbol, "wt"))
+        pickle.dump(contractDetails, open(contractDetails.summary.symbol, "wb"))
 
     def contractDetailsEnd(self, reqId: int):
         super().contractDetailsEnd(reqId)

@@ -4,5 +4,8 @@ class ContractEntry:
 
 
 class ContractDb:
-    def __init__(self):
+    def __init__(self, contract_info_provider):
+        self.contracts = {}
+
+    def add_contract()
         
