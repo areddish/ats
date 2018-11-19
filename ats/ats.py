@@ -18,6 +18,11 @@ import pickle
 
 bars = 0
 
+def to_ib_timestr(dt):
+    return dt.strftime("%Y%m%d %H:%M:%S")
+
+def to_duration(dt_start, dt_end):
+    return f"{(dt_end - dt_start).seconds} S"
 
 class BrokerPlatform(EWrapper, EClient):
     def __init__(self, port, client_id, data_dir):
@@ -29,6 +34,8 @@ class BrokerPlatform(EWrapper, EClient):
         self.bar_series_builder = {}
         self.request_manager = RequestManager()
         self.historical_callbacks = {}
+        self.historical_requests = {}
+        self.historical_request_next_id = 400
 
     def error(self, reqId: int, errorCode: int, errorString: str):
         super().error(reqId, errorCode, errorString)
@@ -91,20 +98,37 @@ class BrokerPlatform(EWrapper, EClient):
                   attrib: TickAttrib):
         print(reqId, tickType, price, attrib)
 
+    def queue_request(self, request):
+        # historical requests are in the 400 - 500 range
+        req_id = self.historical_request_next_id
+        self.historical_request_next_id += 1
+        request.id = req_id
+        self.historical_requests[req_id] = request
+
+        self.reqHistoricalData(req_id, Stock(request.symbol), to_ib_timestr(request.end), to_duration(request.start, request.end), "1 min", "TRADES", 1, 2, False, "XYZ")
+
+
     def register_historical_callback(self, reqId, cb):
         self.historical_callbacks[reqId] = cb
 
     def historicalData(self, reqId, bar):
-        cb = self.historical_callbacks.get(reqId, None)
-        if (not cb):
-            print (f"ERROR: No callback for {reqId}")
-            raise KeyError
+        if (reqId >= 400):
+            self.historical_requests[reqId].on_bar(bar)
+        else:
+            cb = self.historical_callbacks.get(reqId, None)
+            if (not cb):
+                print (f"ERROR: No callback for {reqId}")
+                raise KeyError
 
-        cb(bar)
+            cb(bar)
+
+    def historicalDataEnd(self, reqId:int, start:str, end:str):
+        if (reqId >= 400):
+            self.historical_requests[reqId].on_request_over()
 
     def headTimestamp(self, reqId:int, headTimestamp:str):
         self.historical_callbacks[reqId](headTimestamp)
-        
+
     def reqRealTimeBars(self, reqId, contract, barSize:int,
                         whatToShow:str, useRTH:bool,
                         realTimeBarsOptions):

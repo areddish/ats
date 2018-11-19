@@ -40,7 +40,27 @@ def flush_bars(path, dt, bars):
     with open(os.path.join(path, f"{dt.month}.{dt.day}.{dt.year}.1.minute.txt"),"wt") as file:
         for b in bars:
             print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=file)
-    
+
+class HistoricalDataRequest:
+    def __init__(self, symbol, start, end, duration="1 min", data_dir):
+        self.bars = []
+        self.start = start
+        self.end = end
+        self.symbol = symbol
+        self.duration = duration
+
+    def set_data_folder(self, folder):
+        self.folder = folder
+
+    def on_bar(self, bar):
+        self.bars.append(bar)
+
+    def on_request_over(self):
+        with open(os.path.join(self.folder, f"{self.symbol}-{slice_start.strftime('%m-%d-%Y-%H-%M-%S')}-{slice_end.strftime('%m-%d-%Y-%H-%M-%S')}.txt"),"wt") as data_file:
+            for b in self.bars:
+                print(print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
+        
+
 if "__main__" == __name__:
     bars = []
 
@@ -79,42 +99,10 @@ if "__main__" == __name__:
     try:
         broker = BrokerPlatform(args.port, args.id, args.data_dir)
         broker.connect()
-
-        def record_bar(bar):
-            global bars
-            bars.append(bar)
-
-        broker.register_historical_callback(5, record_bar)
-        # ask for 1 minute bars starting at start and going til end.
-        flush_day = None
-        flush_next = False
-        current = datetime.datetime(args.end.year, args.end.month, args.end.day, 16, 0, 0) + datetime.timedelta(seconds=DELTA_OFFSET)
-        start = args.start if args.start else current + datetime.timedelta(weeks=104)
-        while (current < start):
-            if (flush_next):
-                flush_next = False
-                flush_bars(symbol_dir, flush_day, bars)
-                bars = []
-
-            if (not is_weekday(current)):
-                print(f"Skipping non week day: {current.strftime('%m-%d-%Y')} ({WEEKDAYS[current.weekday()]})")
-                current = skip_back_to_next_weekday(current)
-            else:
-                # 4pm, 1pm, 10pm, 9:30
-                slice_start = current
-                slice_end = current - datetime.timedelta(hours=3)
-                if (is_before_open(slice_end)):
-                    slice_end = datetime.datetime(current.year, current.month, current.day, 9, 30, 0) + datetime.timedelta(seconds=DELTA_OFFSET)
-                    flush_day = current
-                    current = previous_end_of_day(current)
-                    flush_next = True
-                else: 
-                    current = slice_end
-                print(f"Requesting: {args.symbol} {slice_start.strftime('%m-%d-%Y: %H:%M:%S')} = {slice_end.strftime('%m-%d-%Y: %H:%M:%S')}")
-
-                broker.reqHistoricalData(5, Stock(args.symbol), to_ib_timestr(slice_end), to_duration(slice_start,slice_end), "1 min", "TRADES", 1, 2, False, "XYZ")
-                time.sleep(11)
-        #broker.data_manager.create_download()
+    
+        request = HistoricalDataRequest("MSFT", datetime.datetime(2018, 1, 1), datetime.datetime(2018, 1, 31))
+        request.set_data_folder(symbol_dir)
+        broker.queue_request(request)
 
     except KeyboardInterrupt:
         print ("Interrupt! Closing...")
