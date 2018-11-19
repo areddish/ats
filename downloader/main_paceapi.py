@@ -41,8 +41,9 @@ def flush_bars(path, dt, bars):
         for b in bars:
             print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=file)
 
+
 class HistoricalDataRequest:
-    def __init__(self, symbol, start, end, duration="1 min", data_dir):
+    def __init__(self, symbol, start, end, data_dir, duration="1 min"):
         self.bars = []
         self.start = start
         self.end = end
@@ -58,12 +59,9 @@ class HistoricalDataRequest:
     def on_request_over(self):
         with open(os.path.join(self.folder, f"{self.symbol}-{slice_start.strftime('%m-%d-%Y-%H-%M-%S')}-{slice_end.strftime('%m-%d-%Y-%H-%M-%S')}.txt"),"wt") as data_file:
             for b in self.bars:
-                print(print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
-        
+                print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
 
 if "__main__" == __name__:
-    bars = []
-
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("-p", "--port", action="store", type=int,
                             help="TCP port to connect to", dest="port", default=7496)
@@ -100,7 +98,7 @@ if "__main__" == __name__:
         broker = BrokerPlatform(args.port, args.id, args.data_dir)
         broker.connect()
     
-        request = HistoricalDataRequest("MSFT", datetime.datetime(2018, 1, 1), datetime.datetime(2018, 1, 31))
+        request = HistoricalDataRequest("MSFT", datetime.datetime(2018, 1, 1), datetime.datetime(2018, 1, 31), symbol_dir)
         request.set_data_folder(symbol_dir)
         broker.queue_request(request)
 
