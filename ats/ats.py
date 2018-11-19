@@ -3,10 +3,10 @@ from ibapi.client import EClient
 from ibapi.contract import ContractDetails
 from ibapi.common import TickAttrib, BarData
 
-from assets import *
-import orders
-import barutils
-from requestmgr import RequestManager
+from .assets import *
+from .orders import *
+from .barutils import *
+from .requestmgr import RequestManager
 from threading import Thread, Event
 import logging
 import argparse

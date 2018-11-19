@@ -26,7 +26,7 @@ class Request:
         self.complete = request_end_fn
         self.args = kwargs
 
-    def issue(self)
+    def issue(self):
         self.request(self.reqId, *kwargs)
 
 class RequestManager:
