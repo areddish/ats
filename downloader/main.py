@@ -39,7 +39,7 @@ def to_duration(dt_start, dt_end):
 def flush_bars(path, dt, bars):
     with open(os.path.join(path, f"{dt.month}.{dt.day}.{dt.year}.1.minute.txt"),"wt") as file:
         for b in bars:
-            file.write(f" {b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}\r\n")
+            print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=file)
     
 if "__main__" == __name__:
     bars = []
