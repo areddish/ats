@@ -102,6 +102,9 @@ class BrokerPlatform(EWrapper, EClient):
 
         cb(bar)
 
+    def headTimestamp(self, reqId:int, headTimestamp:str):
+        self.historical_callbacks[reqId](headTimestamp)
+        
     def reqRealTimeBars(self, reqId, contract, barSize:int,
                         whatToShow:str, useRTH:bool,
                         realTimeBarsOptions):

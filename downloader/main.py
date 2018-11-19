@@ -11,11 +11,19 @@ from ats.assets import Stock
 
 WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
+# TIMES are in EST
+
+DELTA_OFFSET = ((datetime.datetime.now(datetime.timezone.utc).astimezone().utcoffset().seconds / 3600) - 19.0) * 60 * 60
+
 def is_weekday(dt):
     return dt.weekday() < 5
 
+def is_before_open(dt):
+    open_dt = datetime.datetime(dt.year, dt.month, dt.day, 9, 30, 0) + datetime.timedelta(seconds=DELTA_OFFSET)
+    return dt < open_dt
+
 def previous_end_of_day(dt):
-    return datetime.datetime(dt.year, dt.month, dt.day, 16, 0, 0) - datetime.timedelta(days=1)
+    return datetime.datetime(dt.year, dt.month, dt.day, 16, 0, 0) - datetime.timedelta(days=1) + datetime.timedelta(seconds=DELTA_OFFSET)
     
 def skip_back_to_next_weekday(dt):
     while (not is_weekday(dt)):
@@ -31,7 +39,7 @@ def to_duration(dt_start, dt_end):
 def flush_bars(path, dt, bars):
     with open(os.path.join(path, f"{dt.month}.{dt.day}.{dt.year}.1.minute.txt"),"wt") as file:
         for b in bars:
-            file.write(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}")
+            file.write(f" {b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}\r\n")
     
 if "__main__" == __name__:
     bars = []
@@ -77,7 +85,7 @@ if "__main__" == __name__:
         # ask for 1 minute bars starting at start and going til end.
         flush_day = None
         flush_next = False
-        current = datetime.datetime(args.end.year, args.end.month, args.end.day, 16, 0, 0)
+        current = datetime.datetime(args.end.year, args.end.month, args.end.day, 16, 0, 0) + datetime.timedelta(seconds=DELTA_OFFSET)
         start = args.start if args.start else current + datetime.timedelta(weeks=104)
         while (current < start):
             if (flush_next):
@@ -92,8 +100,8 @@ if "__main__" == __name__:
                 # 4pm, 1pm, 10pm, 9:30
                 slice_start = current
                 slice_end = current - datetime.timedelta(hours=3)
-                if (slice_end.hour < 9):
-                    slice_end = datetime.datetime(current.year, current.month, current.day, 9, 30, 0)
+                if (is_before_open(slice_end):
+                    slice_end = datetime.datetime(current.year, current.month, current.day, 9, 30, 0) + datetime.timedelta(seconds=DELTA_OFFSET)
                     flush_day = current
                     current = previous_end_of_day(current)
                     flush_next = True
