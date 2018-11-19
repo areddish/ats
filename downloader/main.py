@@ -76,12 +76,13 @@ if "__main__" == __name__:
         broker.register_historical_callback(5, record_bar)
         # ask for 1 minute bars starting at start and going til end.
         flush_day = None
+        flush_next = False
         current = datetime.datetime(args.end.year, args.end.month, args.end.day, 16, 0, 0)
         start = args.start if args.start else current + datetime.timedelta(weeks=104)
         while (current < start):
             if (flush_next):
                 flush_next = False
-                flush_bars(symbold_dir, flush_day, bars)
+                flush_bars(symbol_dir, flush_day, bars)
                 bars = []
 
             if (not is_weekday(current)):
