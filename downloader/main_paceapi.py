@@ -58,7 +58,7 @@ class HistoricalDataRequest:
 
     def on_request_over(self):
         earliest_date = None
-        with open(os.path.join(self.folder, f"{self.symbol}-{self.start.strftime('%m-%d-%Y')}-{self.end.strftime('%m-%d-%Y')}.txt"),"wt") as data_file:
+        with open(os.path.join(self.folder, f"{self.symbol}-{self.end.strftime('%m-%d-%Y')}.txt"),"wt") as data_file:
             for b in self.bars:
                 bar_date = datetime.datetime.fromtimestamp(int(b.date))
                 earliest_date = bar_date if bar_date < earliest_date else bar_date
