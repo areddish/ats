@@ -57,7 +57,7 @@ class HistoricalDataRequest:
         self.bars.append(bar)
 
     def on_request_over(self):
-        with open(os.path.join(self.folder, f"{self.symbol}-{self.start.strftime('%m-%d-%Y-%H-%M-%S')}-{self.end.strftime('%m-%d-%Y-%H-%M-%S')}.txt"),"wt") as data_file:
+        with open(os.path.join(self.folder, f"{self.symbol}-{self.start.strftime('%m-%d-%Y')}-{self.end.strftime('%m-%d-%Y')}.txt"),"wt") as data_file:
             for b in self.bars:
                 print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
 
@@ -98,9 +98,15 @@ if "__main__" == __name__:
         broker = BrokerPlatform(args.port, args.id, args.data_dir)
         broker.connect()
     
-        request = HistoricalDataRequest("MSFT", datetime.datetime(2018, 1, 1), datetime.datetime(2018, 1, 31), symbol_dir)
-        request.set_data_folder(symbol_dir)
-        broker.queue_request(request)
+        year = 2018
+        start = datetime.datetime.now()
+        end = start - datetime.timedelta(days=30)
+        while (start.year > 2002):
+            print (f"Requesting 30 days from {start.strftime('%m-%d-%Y')}")
+            request = HistoricalDataRequest(args.symbol, end ,start, symbol_dir)                
+            request.set_data_folder(symbol_dir)
+            broker.queue_request(request)
+            start = end
 
     except KeyboardInterrupt:
         print ("Interrupt! Closing...")

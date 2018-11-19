@@ -105,8 +105,9 @@ class BrokerPlatform(EWrapper, EClient):
         request.id = req_id
         self.historical_requests[req_id] = request
 
-        self.reqHistoricalData(req_id, Stock(request.symbol), to_ib_timestr(request.end), "1 M", "1 min", "TRADES", 1, 2, False, "XYZ")
-
+        self.request_event = Event()
+        self.reqHistoricalData(req_id, Stock(request.symbol), to_ib_timestr(request.end), "30 D", "1 min", "TRADES", 1, 2, False, "XYZ")
+        self.request_event.wait()
 
     def register_historical_callback(self, reqId, cb):
         self.historical_callbacks[reqId] = cb
@@ -125,6 +126,7 @@ class BrokerPlatform(EWrapper, EClient):
     def historicalDataEnd(self, reqId:int, start:str, end:str):
         if (reqId >= 400):
             self.historical_requests[reqId].on_request_over()
+            self.request_event.set()
 
     def headTimestamp(self, reqId:int, headTimestamp:str):
         self.historical_callbacks[reqId](headTimestamp)
