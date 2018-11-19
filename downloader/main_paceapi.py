@@ -57,7 +57,7 @@ class HistoricalDataRequest:
         self.bars.append(bar)
 
     def on_request_over(self):
-        with open(os.path.join(self.folder, f"{self.symbol}-{slice_start.strftime('%m-%d-%Y-%H-%M-%S')}-{slice_end.strftime('%m-%d-%Y-%H-%M-%S')}.txt"),"wt") as data_file:
+        with open(os.path.join(self.folder, f"{self.symbol}-{self.start.strftime('%m-%d-%Y-%H-%M-%S')}-{self.end.strftime('%m-%d-%Y-%H-%M-%S')}.txt"),"wt") as data_file:
             for b in self.bars:
                 print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
 
