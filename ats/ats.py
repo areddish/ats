@@ -52,7 +52,7 @@ class BrokerPlatform(EWrapper, EClient):
     def nextValidId(self, orderId: int):
         super().nextValidId(orderId)
         print("Next valid order id", orderId)
-        orders.next_valid_order_id = orderId
+        #orders.next_valid_order_id = orderId
 
         # Until we get this notification we aren't really ready to run
         # the rest of the system live.

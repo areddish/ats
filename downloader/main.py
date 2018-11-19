@@ -28,17 +28,21 @@ def to_ib_timestr(dt):
 def to_duration(dt_start, dt_end):
     return f"{(dt_end - dt_start).seconds} S"
 
-def record_bar(bar):
-    print ("Bar received", bar)
-
+def flush_bars(path, dt, bars):
+    with open(os.path.join(path, f"{dt.month}.{dt.day}.{dt.year}.1.minute.txt"),"wt") as file:
+        for b in bars:
+            file.write(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}")
+    
 if "__main__" == __name__:
+    bars = []
+
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("-p", "--port", action="store", type=int,
                             help="TCP port to connect to", dest="port", default=7496)
     arg_parser.add_argument("-i", "--id", action="store",
                             type=int, help="Client ID", dest="id", default=6000)
     arg_parser.add_argument("-d", "--data", action="store", type=str, help="Directory of data", dest="data_dir", default=".") 
-    arg_parser.add_argument("-c", "--contract", action="store", type=str, help="Contract symbol", dest="symbol", default="MSFT")  
+    arg_parser.add_argument("-c", "--contract", action="store", type=str, help="Contract symbol", dest="symbol", default="AMZN")  
     arg_parser.add_argument("-s", "--start", action="store", type=datetime.datetime, help="Start time", dest="start", default=None)     
     arg_parser.add_argument("-e", "--end", action="store", type=datetime.datetime, help="End time", dest="end", default=datetime.datetime.now())  
     args = arg_parser.parse_args()
@@ -64,11 +68,22 @@ if "__main__" == __name__:
     try:
         broker = BrokerPlatform(args.port, args.id, args.data_dir)
         broker.connect()
-        # ask for 1 minute bars starting at start and going til end.
 
+        def record_bar(bar):
+            global bars
+            bars.append(bar)
+
+        broker.register_historical_callback(5, record_bar)
+        # ask for 1 minute bars starting at start and going til end.
+        flush_day = None
         current = datetime.datetime(args.end.year, args.end.month, args.end.day, 16, 0, 0)
         start = args.start if args.start else current + datetime.timedelta(weeks=104)
         while (current < start):
+            if (flush_next):
+                flush_next = False
+                flush_bars(symbold_dir, flush_day, bars)
+                bars = []
+
             if (not is_weekday(current)):
                 print(f"Skipping non week day: {current.strftime('%m-%d-%Y')} ({WEEKDAYS[current.weekday()]})")
                 current = skip_back_to_next_weekday(current)
@@ -78,13 +93,14 @@ if "__main__" == __name__:
                 slice_end = current - datetime.timedelta(hours=3)
                 if (slice_end.hour < 9):
                     slice_end = datetime.datetime(current.year, current.month, current.day, 9, 30, 0)
+                    flush_day = current
                     current = previous_end_of_day(current)
+                    flush_next = True
                 else: 
                     current = slice_end
                 print(f"Requesting: {args.symbol} {slice_start.strftime('%m-%d-%Y: %H:%M:%S')} = {slice_end.strftime('%m-%d-%Y: %H:%M:%S')}")
 
-                broker.register_historical_callback(5, record_bar)
-                broker.reqHistoricalData(5, Stock("AMZN"), to_ib_timestr(slice_end), to_duration(slice_start,slice_end), "1 min", "TRADES", 1, 2)
+                broker.reqHistoricalData(5, Stock("AMZN"), to_ib_timestr(slice_end), to_duration(slice_start,slice_end), "1 min", "TRADES", 1, 2, False, "XYZ")
                 time.sleep(11)
         #broker.data_manager.create_download()
 
