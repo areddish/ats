@@ -101,7 +101,7 @@ if "__main__" == __name__:
                     current = slice_end
                 print(f"Requesting: {args.symbol} {slice_start.strftime('%m-%d-%Y: %H:%M:%S')} = {slice_end.strftime('%m-%d-%Y: %H:%M:%S')}")
 
-                broker.reqHistoricalData(5, Stock("AMZN"), to_ib_timestr(slice_end), to_duration(slice_start,slice_end), "1 min", "TRADES", 1, 2, False, "XYZ")
+                broker.reqHistoricalData(5, Stock(args.symbol), to_ib_timestr(slice_end), to_duration(slice_start,slice_end), "1 min", "TRADES", 1, 2, False, "XYZ")
                 time.sleep(11)
         #broker.data_manager.create_download()
 
