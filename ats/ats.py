@@ -105,7 +105,7 @@ class BrokerPlatform(EWrapper, EClient):
         request.id = req_id
         self.historical_requests[req_id] = request
 
-        self.reqHistoricalData(req_id, Stock(request.symbol), to_ib_timestr(request.end), to_duration(request.start, request.end), "1 min", "TRADES", 1, 2, False, "XYZ")
+        self.reqHistoricalData(req_id, Stock(request.symbol), to_ib_timestr(request.end), "1 M", "1 min", "TRADES", 1, 2, False, "XYZ")
 
 
     def register_historical_callback(self, reqId, cb):
