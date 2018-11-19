@@ -61,7 +61,7 @@ class HistoricalDataRequest:
         with open(os.path.join(self.folder, f"{self.symbol}-{self.end.strftime('%m-%d-%Y')}.txt"),"wt") as data_file:
             for b in self.bars:
                 bar_date = datetime.datetime.fromtimestamp(int(b.date))
-                earliest_date = bar_date if bar_date < earliest_date else bar_date
+                earliest_date = bar_date if earliest_date and bar_date < earliest_date else bar_date
                 print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
         self.earliest_date_received = earliest_date
 
