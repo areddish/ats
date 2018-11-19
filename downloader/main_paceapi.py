@@ -43,12 +43,12 @@ def flush_bars(path, dt, bars):
 
 
 class HistoricalDataRequest:
-    def __init__(self, symbol, start, end, data_dir, duration="1 min"):
+    def __init__(self, symbol, end_date, duration="1 D"):
         self.bars = []
-        self.start = start
-        self.end = end
+        self.end = end_date
         self.symbol = symbol
         self.duration = duration
+        self.bar_size = "1 min"
 
     def set_data_folder(self, folder):
         self.folder = folder
@@ -57,9 +57,13 @@ class HistoricalDataRequest:
         self.bars.append(bar)
 
     def on_request_over(self):
+        earliest_date = None
         with open(os.path.join(self.folder, f"{self.symbol}-{self.start.strftime('%m-%d-%Y')}-{self.end.strftime('%m-%d-%Y')}.txt"),"wt") as data_file:
             for b in self.bars:
+                bar_date = datetime.datetime.fromtimestamp(int(b.date))
+                earliest_date = bar_date if bar_date < earliest_date else bar_date
                 print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
+        self.earliest_date_received = earliest_date
 
 if "__main__" == __name__:
     arg_parser = argparse.ArgumentParser()
@@ -98,16 +102,13 @@ if "__main__" == __name__:
         broker = BrokerPlatform(args.port, args.id, args.data_dir)
         broker.connect()
     
-        year = 2018
         start = datetime.datetime.now()
-        end = start - datetime.timedelta(days=30)
         while (start.year > 2002):
             print (f"Requesting 30 days from {start.strftime('%m-%d-%Y')}")
-            request = HistoricalDataRequest(args.symbol, end ,start, symbol_dir)                
+            request = HistoricalDataRequest(args.symbol, start, "30 D")                
             request.set_data_folder(symbol_dir)
             broker.queue_request(request)
-            start = end
-            end = start - datetime.timedelta(days=30)
+            start = request.earliest_date_received - datetime.timedelta(days=1)
 
     except KeyboardInterrupt:
         print ("Interrupt! Closing...")
