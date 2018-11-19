@@ -50,20 +50,20 @@ class HistoricalDataRequest:
         self.duration = duration
         self.bar_size = "1 min"
         self.id = id
+        self.earliest_date_received = end_date
+
     def set_data_folder(self, folder):
         self.folder = folder
 
     def on_bar(self, bar):
+        bar_date = datetime.datetime.fromtimestamp(int(bar.date))
+        self.earliest_date_received = min(self.earliest_date_received, bar_date)
         self.bars.append(bar)
 
     def on_request_over(self):
-        earliest_date = None
         with open(os.path.join(self.folder, f"{self.symbol}-{self.end.strftime('%m-%d-%Y')}.txt"),"wt") as data_file:
             for b in self.bars:
-                bar_date = datetime.datetime.fromtimestamp(int(b.date))
-                earliest_date = bar_date if earliest_date and bar_date < earliest_date else bar_date
                 print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
-        self.earliest_date_received = earliest_date
 
 if "__main__" == __name__:
     arg_parser = argparse.ArgumentParser()
