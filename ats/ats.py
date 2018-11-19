@@ -28,6 +28,7 @@ class BrokerPlatform(EWrapper, EClient):
         self.data_dir = data_dir        
         self.bar_series_builder = {}
         self.request_manager = RequestManager()
+        self.historical_callbacks = {}
 
     def error(self, reqId: int, errorCode: int, errorString: str):
         super().error(reqId, errorCode, errorString)
@@ -89,6 +90,17 @@ class BrokerPlatform(EWrapper, EClient):
     def tickPrice(self, reqId: int, tickType: int, price: float,
                   attrib: TickAttrib):
         print(reqId, tickType, price, attrib)
+
+    def register_historical_callback(self, reqId, cb):
+        self.historical_callbacks[reqId] = cb
+
+    def historicalData(self, reqId, bar):
+        cb = self.historical_callbacks.get(reqId, None)
+        if (not cb):
+            print (f"ERROR: No callback for {reqId}")
+            raise KeyError
+
+        cb(bar)
 
     def reqRealTimeBars(self, reqId, contract, barSize:int,
                         whatToShow:str, useRTH:bool,

@@ -1,4 +1,5 @@
 from ibapi.common import BarData
+from .EventGenerator import *
 
 import datetime
 

@@ -3,7 +3,7 @@ class EventGenerator:
         self.events = {}
 
     def subscribe(self, eventName, callback):
-        event_listeners = self.events.get(eventName, []))
+        event_listeners = self.events.get(eventName, [])
         event_listeners.append(callback)
         self.events[eventName] = event_listeners
 
@@ -12,7 +12,7 @@ class EventGenerator:
         listener_count = len(event_listeners)
         event_listeners.remove(callback)
         if len(event_listeners) == listener_count:
-            raise KeyError, f"Coudln't remove {eventName}"
+            raise KeyError #, f"Coudln't remove {eventName}"
 
     def raise_event(self, eventName, data):
         event_listeners = self.events.get(eventName, [])
