@@ -107,6 +107,7 @@ if "__main__" == __name__:
             request.set_data_folder(symbol_dir)
             broker.queue_request(request)
             start = end
+            end = start - datetime.timedelta(days=30)
 
     except KeyboardInterrupt:
         print ("Interrupt! Closing...")
