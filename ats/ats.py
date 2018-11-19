@@ -99,10 +99,13 @@ class BrokerPlatform(EWrapper, EClient):
         print(reqId, tickType, price, attrib)
 
     def queue_request(self, request):
-        # historical requests are in the 400 - 500 range
-        req_id = self.historical_request_next_id
-        self.historical_request_next_id += 1
-        request.id = req_id
+        req_id = request.id
+        if (req_id == None):
+            # historical requests are in the 400 - 500 range
+            req_id = self.historical_request_next_id
+            self.historical_request_next_id += 1
+            request.id = req_id
+            
         self.historical_requests[req_id] = request
 
         self.request_event = Event()

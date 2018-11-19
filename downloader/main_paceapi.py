@@ -43,13 +43,13 @@ def flush_bars(path, dt, bars):
 
 
 class HistoricalDataRequest:
-    def __init__(self, symbol, end_date, duration="1 D"):
+    def __init__(self, symbol, end_date, duration="1 D", id = None):
         self.bars = []
         self.end = end_date
         self.symbol = symbol
         self.duration = duration
         self.bar_size = "1 min"
-
+        self.id = id
     def set_data_folder(self, folder):
         self.folder = folder
 
@@ -105,7 +105,7 @@ if "__main__" == __name__:
         start = datetime.datetime.now()
         while (start.year > 2002):
             print (f"Requesting 30 days from {start.strftime('%m-%d-%Y')}")
-            request = HistoricalDataRequest(args.symbol, start, "30 D")                
+            request = HistoricalDataRequest(args.symbol, start, "30 D", id = args.id)                
             request.set_data_folder(symbol_dir)
             broker.queue_request(request)
             start = request.earliest_date_received - datetime.timedelta(days=1)
