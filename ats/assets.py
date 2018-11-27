@@ -11,7 +11,8 @@ from ibapi.contract import *
 tickers_that_need_primary_exchange = {
     "MSFT": "NASDAQ",
     "CSCO": "NASDAQ",
-    "INTC": "NASDAQ"
+    "INTC": "NASDAQ",
+    "GLD": "ARCA"
 }
 
 
