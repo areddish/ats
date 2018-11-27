@@ -38,9 +38,11 @@ class BrokerPlatform(EWrapper, EClient):
         self.historical_request_next_id = 400
 
     def error(self, reqId: int, errorCode: int, errorString: str):
-        super().error(reqId, errorCode, errorString)
-        print(errorCode, errorString)
-        pass
+        if (errorCode == 2104 or errorCode == 2106):
+            print(errorString)
+        else:
+            super().error(reqId, errorCode, errorString)
+            print(errorCode, errorString)
 
     def winError(self, text: str, lastError: int):
         super().winError(text, lastError)
