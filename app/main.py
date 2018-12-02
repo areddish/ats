@@ -2,10 +2,9 @@ import os
 import argparse
 import time
 
-
 from ats.ats import BrokerPlatform
 from ats.assets import Stock
-from ats.requests.contractdetails import ContractDetailsRequest
+from ats.requests import ContractDetailsRequest
 
 if "__main__" == __name__:
     print("Starting up...")
@@ -15,7 +14,8 @@ if "__main__" == __name__:
                             help="TCP port to connect to", dest="port", default=7496)
     arg_parser.add_argument("-i", "--id", action="store",
                             type=int, help="Client ID", dest="id", default=1026)
-    arg_parser.add_argument("-d", "--data", action="store", type=str, help="Directory of data", dest="data_dir", default=".\\")    
+    arg_parser.add_argument("-d", "--data", action="store", type=str,
+                            help="Directory of data", dest="data_dir", default=".\\")
     args = arg_parser.parse_args()
 
     print("Using Client ID: ", args.id)
@@ -23,16 +23,18 @@ if "__main__" == __name__:
     print("Data directory: ", args.data_dir, end="")
 
     if (not os.path.isdir(args.data_dir)):
-        print ("missing!")
+        print("missing!")
         exit(-1)
     else:
-        print ("exists!")
+        print("exists!")
 
     trader = BrokerPlatform(args.port, args.id)
-    trader.connect()
-
     try:
+        trader.connect()
 
+        if (not trader.is_connected):
+            print ("Couldn't connect.")
+            exit(-1)
 
         for sym in ["AAPL", "TNA", "MSFT", "SPY", "TSLA", "BAC", "AMZN"]:
             details_req = ContractDetailsRequest(Stock(sym))
@@ -52,13 +54,12 @@ if "__main__" == __name__:
         # while (sym != "" and trader.isConnected()):
         #     time.sleep(2)
     except KeyboardInterrupt:
-        print ("Interrupt! Closing...")
+        print("Interrupt! Closing...")
     #     print ("Enter symbol")
     #     sym = input()
     #     trader.find_contract(sym)
 
-    print ("Sending Disconnect. ")
+    print("Sending Disconnect. ")
+    print("Waiting for disconnect...")
     trader.disconnect()
-    print ("Waiting for disconnect...")
-    trader.thread.join()
-    print ("Goodbye")
+    print("Goodbye")

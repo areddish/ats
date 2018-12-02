@@ -44,9 +44,12 @@ class BrokerPlatform(EWrapper):
 
         self.client_id = client_id
         self.port = port
+        self.is_connected = False
 
         self.request_manager = RequestManager()
         self.order_manager = OrderManager()
+
+        self.thread = None
 
     def error(self, reqId: int, errorCode: int, errorString: str):
         if (reqId != -1):
@@ -68,7 +71,7 @@ class BrokerPlatform(EWrapper):
         self.thread = Thread(target=self.client.run)
         self.thread.start()
         self.connect_event = Event()
-        self.connect_event.wait()
+        self.is_connected = self.connect_event.wait(2)
 
     def connectAck(self):
         print("Connected!")
@@ -80,6 +83,13 @@ class BrokerPlatform(EWrapper):
         self.order_manager.next_valid_order_id = orderId
         # Now we are ready and really connected.
         self.connect_event.set()
+
+    def disconnect(self):
+        if (self.is_connected):
+            self.is_connected = False
+            self.client.disconnect()
+        if (self.thread):
+            self.thread.join()
 
     # def tickPrice(self, reqId: int, tickType: int, price: float,
     #               attrib: TickAttrib):
@@ -137,7 +147,6 @@ class BrokerPlatform(EWrapper):
         del args["self"]
         del args["reqId"]
         self.request_manager.mark_finished(reqId, **args)
-
 
     def reqRealTimeBars(self, reqId, contract, barSize: int,
                         whatToShow: str, useRTH: bool,
@@ -202,7 +211,6 @@ class BrokerPlatform(EWrapper):
         del args["reqId"]
         self.request_manager.mark_finished(reqId, **args)
 
-
     def tickGeneric(self, reqId: TickerId, tickType: TickType, value: float):
         args = locals()
         del args["self"]
@@ -220,7 +228,6 @@ class BrokerPlatform(EWrapper):
         args = locals()
         del args["self"]
         self.request_manager.get(reqId).on_data(**args)
-
 
     def orderStatus(self, orderId: OrderId, status: str, filled: float,
                     remaining: float, avgFillPrice: float, permId: int,
@@ -303,8 +310,6 @@ class BrokerPlatform(EWrapper):
         contracts matching the requested via EEClientSocket::reqContractDetails.
         For example, one can obtain the whole option chain with it."""
         args = locals()
-        del args["self"]
-            args = locals()
         del args["self"]
         self.request_manager.get(reqId).on_data(**args)
 
@@ -501,7 +506,6 @@ class BrokerPlatform(EWrapper):
         # del args["self"]
         # self.request_manager.get(reqId).on_data(**args)
 
-
     def commissionReport(self, commissionReport: CommissionReport):
         """The commissionReport() callback is triggered as follows:
         - immediately after a trade execution
@@ -537,7 +541,6 @@ class BrokerPlatform(EWrapper):
         del args["self"]
         del args["reqId"]
         self.request_manager.mark_finished(reqId, **args)
-
 
     def displayGroupList(self, reqId: int, groups: str):
         """This callback is a one-time response to queryDisplayGroups().
@@ -638,7 +641,6 @@ class BrokerPlatform(EWrapper):
         del args["self"]
         del args["reqId"]
         self.request_manager.mark_finished(reqId, **args)
-
 
     def softDollarTiers(self, reqId: int, tiers: list):
         """ Called when receives Soft Dollar Tier configuration information
