@@ -38,6 +38,10 @@ class Downloader:
     def onDataFinished(self, reqId):
         # Write out files
         # Request next chunk
+
+
+
+    
 print ("starting at: ",start)
 while (start.year > 2017): #1980):
     print ("requested from ", start, "to", start+walk_back)

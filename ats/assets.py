@@ -1,5 +1,5 @@
 import datetime
-from ibapi.contract import *
+from ibapi.contract import Contract
 
 # These symbols require an exchange to be set otherwise we get an error since there
 # are duplicates in the IB system. These are empirically found by getting an error
