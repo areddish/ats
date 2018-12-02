@@ -7,7 +7,7 @@ class ContractDetailsRequest(Request):
         self.request_type = RequestType.CONTRACT_DETAILS
 
     def on_data(self, **kwargs):
-        contractDetails = kwargs["contractDetails"]
+        contractDetails = kwargs["contractDetails"]        
         print(contractDetails.contract.symbol,
               contractDetails.contractMonth, contractDetails.contract.conId, contractDetails)
         

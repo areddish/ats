@@ -28,11 +28,14 @@ import pickle
 
 bars = 0
 
+
 def to_ib_timestr(dt):
     return dt.strftime("%Y%m%d %H:%M:%S")
 
+
 def to_duration(dt_start, dt_end):
     return f"{(dt_end - dt_start).seconds} S"
+
 
 class BrokerPlatform(EWrapper):
     def __init__(self, port, client_id):
@@ -58,7 +61,7 @@ class BrokerPlatform(EWrapper):
 
     def winError(self, text: str, lastError: int):
         super().winError(text, lastError)
-        print ("winError", text, lastError)
+        print("winError", text, lastError)
 
     def connect(self, host="127.0.0.1"):
         self.client.connect(host, self.port, self.client_id)
@@ -74,7 +77,7 @@ class BrokerPlatform(EWrapper):
     # the rest of the system live.
     def nextValidId(self, orderId: int):
         print("Next valid order id", orderId)
-        self.order_manager.next_valid_order_id = orderId       
+        self.order_manager.next_valid_order_id = orderId
         # Now we are ready and really connected.
         self.connect_event.set()
 
@@ -100,40 +103,50 @@ class BrokerPlatform(EWrapper):
     #         req_id = self.historical_request_next_id
     #         self.historical_request_next_id += 1
     #         request.id = req_id
-            
+
     #     self.historical_requests[req_id] = request
 
     #     self.request_event = Event()
     #     self.reqHistoricalData(req_id, Stock(request.symbol), to_ib_timestr(request.end), request.duration, request.bar_size, "TRADES", 1, 2, False, ["XYZ"])
     #     self.request_event.wait()
 
-    def handle_request(self, request:Request):
+    def handle_request(self, request: Request):
         # Assign a request id
         self.request_manager.add(request)
 
         # Process it based on type, making appropriate calls into the client.
         request_type = type(request)
         if (request_type == HistoricalDataRequest):
-            self.client.reqHistoricalData(request.request_id, request.contract, to_ib_timestr(request.end), request.duration, request.bar_size, "TRADES", 1, 2, False, [])
+            self.client.reqHistoricalData(request.request_id, request.contract, to_ib_timestr(
+                request.end), request.duration, request.bar_size, "TRADES", 1, 2, False, [])
         elif (request_type == ContractDetailsRequest):
-            self.client.reqContractDetails(request.request_id, request.contract)
+            self.client.reqContractDetails(
+                request.request_id, request.contract)
 
         # If synchrononous wait on it.
         if (request.is_synchronous):
             request.event.wait()
 
     def historicalData(self, reqId, bar):
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-    def historicalDataEnd(self, reqId:int, start:str, end:str):
-        self.request_manager.mark_finished(reqId, locals())
+    def historicalDataEnd(self, reqId: int, start: str, end: str):
+        args = locals()
+        del args["self"]
+        del args["reqId"]
+        self.request_manager.mark_finished(reqId, **args)
 
-    def reqRealTimeBars(self, reqId, contract, barSize:int,
-                        whatToShow:str, useRTH:bool,
+
+    def reqRealTimeBars(self, reqId, contract, barSize: int,
+                        whatToShow: str, useRTH: bool,
                         realTimeBarsOptions):
-        self.bar_series_builder[reqId] = barutils.BarAggregator(contract, self.data_dir)
-        super().reqRealTimeBars(reqId, contract, barSize, whatToShow, useRTH, realTimeBarsOptions)
-        
+        self.bar_series_builder[reqId] = barutils.BarAggregator(
+            contract, self.data_dir)
+        super().reqRealTimeBars(reqId, contract, barSize,
+                                whatToShow, useRTH, realTimeBarsOptions)
+
     def realtimeBar(self, reqId: int, timeStamp: int, open: float, high: float,
                     low: float, close: float, volume: int, wap: float,
                     count: int):
@@ -158,7 +171,7 @@ class BrokerPlatform(EWrapper):
               volume, count)
         pass
 
-    def marketDataType(self, reqId:TickerId, marketDataType:int):
+    def marketDataType(self, reqId: TickerId, marketDataType: int):
         """TWS sends a marketDataType(type) callback to the API, where
         type is set to Frozen or RealTime, to announce that market data has been
         switched between frozen and real-time. This notification occurs only
@@ -166,39 +179,53 @@ class BrokerPlatform(EWrapper):
         marketDataType( ) callback accepts a reqId parameter and is sent per
         every subscription because different contracts can generally trade on a
         different schedule."""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-
-    def tickPrice(self, reqId:TickerId , tickType:TickType, price:float,
-                  attrib:TickAttrib):
+    def tickPrice(self, reqId: TickerId, tickType: TickType, price: float,
+                  attrib: TickAttrib):
         """Market data tick price callback. Handles all price related ticks."""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-
-    def tickSize(self, reqId:TickerId, tickType:TickType, size:int):
+    def tickSize(self, reqId: TickerId, tickType: TickType, size: int):
         """Market data tick size callback. Handles all size-related ticks."""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
+
+    def tickSnapshotEnd(self, reqId: int):
+        args = locals()
+        del args["self"]
+        del args["reqId"]
+        self.request_manager.mark_finished(reqId, **args)
 
 
-    def tickSnapshotEnd(self, reqId:int):
-        self.request_manager.mark_finished(reqId)
+    def tickGeneric(self, reqId: TickerId, tickType: TickType, value: float):
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-    def tickGeneric(self, reqId:TickerId, tickType:TickType, value:float):
-        self.request_manager.get(reqId).on_data(locals())
+    def tickString(self, reqId: TickerId, tickType: TickType, value: str):
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-    def tickString(self, reqId:TickerId, tickType:TickType, value:str):
-        self.request_manager.get(reqId).on_data(locals())
+    def tickEFP(self, reqId: TickerId, tickType: TickType, basisPoints: float,
+                formattedBasisPoints: str, totalDividends: float,
+                holdDays: int, futureLastTradeDate: str, dividendImpact: float,
+                dividendsToLastTradeDate: float):
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-    def tickEFP(self, reqId:TickerId, tickType:TickType, basisPoints:float,
-                formattedBasisPoints:str, totalDividends:float,
-                holdDays:int, futureLastTradeDate:str, dividendImpact:float,
-                dividendsToLastTradeDate:float):
-        self.request_manager.get(reqId).on_data(locals())
 
-    def orderStatus(self, orderId:OrderId , status:str, filled:float,
-                    remaining:float, avgFillPrice:float, permId:int,
-                    parentId:int, lastFillPrice:float, clientId:int,
-                    whyHeld:str, mktCapPrice: float):
+    def orderStatus(self, orderId: OrderId, status: str, filled: float,
+                    remaining: float, avgFillPrice: float, permId: int,
+                    parentId: int, lastFillPrice: float, clientId: int,
+                    whyHeld: str, mktCapPrice: float):
         """This event is called whenever the status of an order changes. It is
         also fired after reconnecting to TWS if the client has any open orders.
 
@@ -225,9 +252,8 @@ class BrokerPlatform(EWrapper):
         """
         self.order_manager.on_order_status(locals())
 
-
-    def openOrder(self, orderId:OrderId, contract:Contract, order:Order,
-                  orderState:OrderState):
+    def openOrder(self, orderId: OrderId, contract: Contract, order: Order,
+                  orderState: OrderState):
         """This function is called to feed in open orders.
 
         orderID: OrderId - The order ID assigned by TWS. Use to cancel or
@@ -238,63 +264,58 @@ class BrokerPlatform(EWrapper):
             for both pre and post trade margin and commission data."""
         self.order_manager.on_open_order(locals())
 
-
     def openOrderEnd(self):
         """This is called at the end of a given request for open orders."""
         self.order_manager.on_open_order_end()
-
 
     def connectionClosed(self):
         """This function is called when TWS closes the sockets
         connection with the ActiveX control, or when TWS is shut down."""
         self.logAnswer(current_fn_name(), vars())
 
-
-    def updateAccountValue(self, key:str, val:str, currency:str,
-                            accountName:str):
+    def updateAccountValue(self, key: str, val: str, currency: str,
+                           accountName: str):
         """ This function is called only when ReqAccountUpdates on
         EEClientSocket object has been called. """
 
         self.logAnswer(current_fn_name(), vars())
 
-
-    def updatePortfolio(self, contract:Contract, position:float,
-                        marketPrice:float, marketValue:float,
-                        averageCost:float, unrealizedPNL:float,
-                        realizedPNL:float, accountName:str):
+    def updatePortfolio(self, contract: Contract, position: float,
+                        marketPrice: float, marketValue: float,
+                        averageCost: float, unrealizedPNL: float,
+                        realizedPNL: float, accountName: str):
         """This function is called only when reqAccountUpdates on
         EEClientSocket object has been called."""
 
         self.logAnswer(current_fn_name(), vars())
 
-
-    def updateAccountTime(self, timeStamp:str):
+    def updateAccountTime(self, timeStamp: str):
         self.logAnswer(current_fn_name(), vars())
 
-
-    def accountDownloadEnd(self, accountName:str):
+    def accountDownloadEnd(self, accountName: str):
         """This is called after a batch updateAccountValue() and
         updatePortfolio() is sent."""
 
         self.logAnswer(current_fn_name(), vars())
 
-    def contractDetails(self, reqId:int, contractDetails:ContractDetails):
+    def contractDetails(self, reqId: int, contractDetails: ContractDetails):
         """Receives the full contract's definitons. This method will return all
         contracts matching the requested via EEClientSocket::reqContractDetails.
         For example, one can obtain the whole option chain with it."""
         args = locals()
         del args["self"]
+            args = locals()
+        del args["self"]
         self.request_manager.get(reqId).on_data(**args)
 
-
-    def bondContractDetails(self, reqId:int, contractDetails:ContractDetails):
+    def bondContractDetails(self, reqId: int, contractDetails: ContractDetails):
         """This function is called when reqContractDetails function
         has been called for bonds."""
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
-    def contractDetailsEnd(self, reqId:int):
+    def contractDetailsEnd(self, reqId: int):
         """This function is called once all contract details for a given
         request are received. This helps to define the end of an option
         chain."""
@@ -303,24 +324,23 @@ class BrokerPlatform(EWrapper):
         del args["reqId"]
         self.request_manager.mark_finished(reqId, **args)
 
-
-    def execDetails(self, reqId:int, contract:Contract, execution:Execution):
+    def execDetails(self, reqId: int, contract: Contract, execution: Execution):
         """This event is fired when the reqExecutions() functions is
         invoked, or when an order is filled.  """
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
-    def execDetailsEnd(self, reqId:int):
+    def execDetailsEnd(self, reqId: int):
         """This function is called once all executions have been sent to
         a client in response to reqExecutions()."""
+        args = locals()
+        del args["self"]
+        del args["reqId"]
+        self.request_manager.mark_finished(reqId, **args)
 
-        self.logAnswer(current_fn_name(), vars())
-
-
-
-    def updateMktDepth(self, reqId:TickerId , position:int, operation:int,
-                        side:int, price:float, size:int):
+    def updateMktDepth(self, reqId: TickerId, position: int, operation: int,
+                       side: int, price: float, size: int):
         """Returns the order book.
 
         tickerId -  the request's identifier
@@ -332,12 +352,12 @@ class BrokerPlatform(EWrapper):
         side -  0 for ask, 1 for bid
         price - the order's price
         size -  the order's size"""
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
-    def updateMktDepthL2(self, reqId:TickerId , position:int, marketMaker:str,
-                          operation:int, side:int, price:float, size:int):
+    def updateMktDepthL2(self, reqId: TickerId, position: int, marketMaker: str,
+                         operation: int, side: int, price: float, size: int):
         """Returns the order book.
 
         tickerId -  the request's identifier
@@ -350,28 +370,27 @@ class BrokerPlatform(EWrapper):
         side -  0 for ask, 1 for bid
         price - the order's price
         size -  the order's size"""
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
-    def updateNewsBulletin(self, msgId:int, msgType:int, newsMessage:str,
-                           originExch:str):
+    def updateNewsBulletin(self, msgId: int, msgType: int, newsMessage: str,
+                           originExch: str):
         """ provides IB's bulletins
         msgId - the bulletin's identifier
         msgType - one of: 1 - Regular news bulletin 2 - Exchange no longer
             available for trading 3 - Exchange is available for trading
         message - the message
         origExchange -    the exchange where the message comes from.  """
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
-    def managedAccounts(self, accountsList:str):
+    def managedAccounts(self, accountsList: str):
         """Receives a comma-separated string with the managed account ids."""
         self.logAnswer(current_fn_name(), vars())
 
-
-    def receiveFA(self, faData:FaDataType , cxml:str):
+    def receiveFA(self, faData: FaDataType, cxml: str):
         """ receives the Financial Advisor's configuration available in the TWS
 
         faDataType - one of:
@@ -400,25 +419,23 @@ class BrokerPlatform(EWrapper):
             for TRADES).
         WAP -   the bar's Weighted Average Price
         hasGaps  -indicates if the data has gaps or not. """
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
-    def historicalDataEnd(self, reqId:int, start:str, end:str):
+    def historicalDataEnd(self, reqId: int, start: str, end: str):
         """ Marks the ending of the historical bars reception. """
         self.logAnswer(current_fn_name(), vars())
 
-
-    def scannerParameters(self, xml:str):
+    def scannerParameters(self, xml: str):
         """ Provides the xml-formatted parameters available to create a market
         scanner.
 
         xml -   the xml-formatted string with the available parameters."""
         self.logAnswer(current_fn_name(), vars())
 
-
-    def scannerData(self, reqId:int, rank:int, contractDetails:ContractDetails,
-                     distance:str, benchmark:str, projection:str, legsStr:str):
+    def scannerData(self, reqId: int, rank: int, contractDetails: ContractDetails,
+                    distance: str, benchmark: str, projection: str, legsStr: str):
         """ Provides the data resulting from the market scanner request.
 
         reqid - the request's identifier.
@@ -431,18 +448,17 @@ class BrokerPlatform(EWrapper):
 
         self.logAnswer(current_fn_name(), vars())
 
-
-    def scannerDataEnd(self, reqId:int):
+    def scannerDataEnd(self, reqId: int):
         """ Indicates the scanner data reception has terminated.
 
         reqId - the request's identifier"""
+        args = locals()
+        del args["self"]
+        del args["reqId"]
+        self.request_manager.mark_finished(reqId, **args)
 
-        self.logAnswer(current_fn_name(), vars())
-
-
-    def realtimeBar(self, reqId: TickerId, time:int, open: float, high: float, low: float, close: float,
-                        volume: int, wap: float, count: int):
-
+    def realtimeBar(self, reqId: TickerId, time: int, open: float, high: float, low: float, close: float,
+                    volume: int, wap: float, count: int):
         """ Updates the real time 5 seconds bars
 
         reqId - the request's identifier
@@ -456,24 +472,23 @@ class BrokerPlatform(EWrapper):
         bar.WAP   - the bar's Weighted Average Price
         bar.count - the number of trades during the bar's timespan (only available
             for TRADES)."""
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
-    def currentTime(self, time:int):
+    def currentTime(self, time: int):
         """ Server's current time. This method will receive IB server's system
         time resulting after the invokation of reqCurrentTime. """
 
         self.logAnswer(current_fn_name(), vars())
 
-
-    def fundamentalData(self, reqId:TickerId , data:str):
+    def fundamentalData(self, reqId: TickerId, data: str):
         """This function is called to receive Reuters global fundamental
         market data. There must be a subscription to Reuters Fundamental set
         up in Account Management before you can receive this data."""
-
-        self.request_manager.get(reqId).on_data(locals())
-
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
     # def deltaNeutralValidation(self, reqId:int, underComp:UnderComp):
     #     """Upon accepting a Delta-Neutral RFQ(request for quote), the
@@ -482,24 +497,24 @@ class BrokerPlatform(EWrapper):
     #     request, the confirmation will contain the current values from the
     #     server. These values are locked when the RFQ is processed and remain
     #     locked until the RFQ is canceled."""
+        # args = locals()
+        # del args["self"]
+        # self.request_manager.get(reqId).on_data(**args)
 
-    #     self.request_manager.get(reqId).on_data(locals())
 
-    def commissionReport(self, commissionReport:CommissionReport):
+    def commissionReport(self, commissionReport: CommissionReport):
         """The commissionReport() callback is triggered as follows:
         - immediately after a trade execution
         - by calling reqExecutions()."""
 
         self.logAnswer(current_fn_name(), vars())
 
-
-    def position(self, account:str, contract:Contract, position:float,
-                 avgCost:float):
+    def position(self, account: str, contract: Contract, position: float,
+                 avgCost: float):
         """This event returns real-time positions for all accounts in
         response to the reqPositions() method."""
 
         self.logAnswer(current_fn_name(), vars())
-
 
     def positionEnd(self):
         """This is called once all position data for a given request are
@@ -507,23 +522,24 @@ class BrokerPlatform(EWrapper):
 
         self.logAnswer(current_fn_name(), vars())
 
-
-    def accountSummary(self, reqId:int, account:str, tag:str, value:str,
-                       currency:str):
+    def accountSummary(self, reqId: int, account: str, tag: str, value: str,
+                       currency: str):
         """Returns the data from the TWS Account Window Summary tab in
         response to reqAccountSummary()."""
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
-    def accountSummaryEnd(self, reqId:int):
+    def accountSummaryEnd(self, reqId: int):
         """This method is called once all account summary data for a
         given request are received."""
+        args = locals()
+        del args["self"]
+        del args["reqId"]
+        self.request_manager.mark_finished(reqId, **args)
 
-        self.logAnswer(current_fn_name(), vars())
 
-
-    def displayGroupList(self, reqId:int, groups:str):
+    def displayGroupList(self, reqId: int, groups: str):
         """This callback is a one-time response to queryDisplayGroups().
 
         reqId - The requestId specified in queryDisplayGroups().
@@ -531,11 +547,11 @@ class BrokerPlatform(EWrapper):
             the | character, and sorted by most used group first. This list will
              not change during TWS session (in other words, user cannot add a
             new group; sorting can change though)."""
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
-    def displayGroupUpdated(self, reqId:int, contractInfo:str):
+    def displayGroupUpdated(self, reqId: int, contractInfo: str):
         """This is sent by TWS to the API client once after receiving
         the subscription request subscribeToGroupEvents(), and will be sent
         again if the selected contract in the subscribed display group has
@@ -548,54 +564,54 @@ class BrokerPlatform(EWrapper):
             contractID@exchange = any non-combination contract.
                 Examples: 8314@SMART for IBM SMART; 8314@ARCA for IBM @ARCA.
             combo = if any combo is selected.  """
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
-    def positionMulti(self, reqId:int, account:str, modelCode:str,
-                      contract:Contract, pos:float, avgCost:float):
+    def positionMulti(self, reqId: int, account: str, modelCode: str,
+                      contract: Contract, pos: float, avgCost: float):
         """same as position() except it can be for a certain
         account/model"""
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
-    def positionMultiEnd(self, reqId:int):
+    def positionMultiEnd(self, reqId: int):
         """same as positionEnd() except it can be for a certain
         account/model"""
 
         self.logAnswer(current_fn_name(), vars())
 
-
-    def accountUpdateMulti(self, reqId:int, account:str, modelCode:str,
-                            key:str, value:str, currency:str):
+    def accountUpdateMulti(self, reqId: int, account: str, modelCode: str,
+                           key: str, value: str, currency: str):
         """same as updateAccountValue() except it can be for a certain
         account/model"""
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
-    def accountUpdateMultiEnd(self, reqId:int):
+    def accountUpdateMultiEnd(self, reqId: int):
         """same as accountDownloadEnd() except it can be for a certain
         account/model"""
+        args = locals()
+        del args["self"]
+        del args["reqId"]
+        self.request_manager.mark_finished(reqId, **args)
 
-        self.logAnswer(current_fn_name(), vars())
-
-
-    def tickOptionComputation(self, reqId:TickerId, tickType:TickType ,
-            impliedVol:float, delta:float, optPrice:float, pvDividend:float,
-            gamma:float, vega:float, theta:float, undPrice:float):
+    def tickOptionComputation(self, reqId: TickerId, tickType: TickType,
+                              impliedVol: float, delta: float, optPrice: float, pvDividend: float,
+                              gamma: float, vega: float, theta: float, undPrice: float):
         """This function is called when the market in an option or its
         underlier moves. TWS's option model volatilities, prices, and
         deltas, along with the present value of dividends expected on that
         options underlier are received."""
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
-    def securityDefinitionOptionParameter(self, reqId:int, exchange:str,
-        underlyingConId:int, tradingClass:str, multiplier:str,
-        expirations:SetOfString, strikes:SetOfFloat):
+    def securityDefinitionOptionParameter(self, reqId: int, exchange: str,
+                                          underlyingConId: int, tradingClass: str, multiplier: str,
+                                          expirations: SetOfString, strikes: SetOfFloat):
         """ Returns the option chain for an underlying on an exchange
         specified in reqSecDefOptParams There will be multiple callbacks to
         securityDefinitionOptionParameter if multiple exchanges are specified
@@ -609,87 +625,114 @@ class BrokerPlatform(EWrapper):
              on this exchange
         strikes - a list of the possible strikes for options of this underlying
              on this exchange """
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-
-    def securityDefinitionOptionParameterEnd(self, reqId:int):
+    def securityDefinitionOptionParameterEnd(self, reqId: int):
         """ Called when all callbacks to securityDefinitionOptionParameter are
         complete
 
         reqId - the ID used in the call to securityDefinitionOptionParameter """
-        self.logAnswer(current_fn_name(), vars())
+        args = locals()
+        del args["self"]
+        del args["reqId"]
+        self.request_manager.mark_finished(reqId, **args)
 
 
-    def softDollarTiers(self, reqId:int, tiers:list):
+    def softDollarTiers(self, reqId: int, tiers: list):
         """ Called when receives Soft Dollar Tier configuration information
 
         reqId - The request ID used in the call to EEClient::reqSoftDollarTiers
         tiers - Stores a list of SoftDollarTier that contains all Soft Dollar
             Tiers information """
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-
-    def familyCodes(self, familyCodes:ListOfFamilyCode):
+    def familyCodes(self, familyCodes: ListOfFamilyCode):
         """ returns array of family codes """
-        self.logAnswer(current_fn_name(), vars())        
+        self.logAnswer(current_fn_name(), vars())
 
-    def symbolSamples(self, reqId:int,
-                      contractDescriptions:ListOfContractDescription):
+    def symbolSamples(self, reqId: int,
+                      contractDescriptions: ListOfContractDescription):
         """ returns array of sample contract descriptions """
         self.logAnswer(current_fn_name(), vars())
 
-
-    def mktDepthExchanges(self, depthMktDataDescriptions:ListOfDepthExchanges):
+    def mktDepthExchanges(self, depthMktDataDescriptions: ListOfDepthExchanges):
         """ returns array of exchanges which return depth to UpdateMktDepthL2"""
         self.logAnswer(current_fn_name(), vars())
 
-    def tickNews(self, tickerId: int, timeStamp:int, providerCode:str, articleId:str, headline:str, extraData:str):
+    def tickNews(self, tickerId: int, timeStamp: int, providerCode: str, articleId: str, headline: str, extraData: str):
         """ returns news headlines"""
-        self.logAnswer(current_fn_name(), vars())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(tickerId).on_data(**args)
 
-    def smartComponents(self, reqId:int, map:SmartComponentMap):
+    def smartComponents(self, reqId: int, map: SmartComponentMap):
         """returns exchange component mapping"""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-    def tickReqParams(self, tickerId:int, minTick:float, bboExchange:str, snapshotPermissions:int):
+    def tickReqParams(self, tickerId: int, minTick: float, bboExchange: str, snapshotPermissions: int):
         """returns exchange map of a particular contract"""
-        self.request_manager.get(tickerId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(tickerId).on_data(**args)
 
-    def newsProviders(self, newsProviders:ListOfNewsProviders):
+    def newsProviders(self, newsProviders: ListOfNewsProviders):
         """returns available, subscribed API news providers"""
         self.logAnswer(current_fn_name(), vars())
 
-    def newsArticle(self, requestId:int, articleType:int, articleText:str):
+    def newsArticle(self, requestId: int, articleType: int, articleText: str):
         """returns body of news article"""
-        self.request_manager.get(requestId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(requestId).on_data(**args)
 
-    def historicalNews(self, requestId:int, time:str, providerCode:str, articleId:str, headline:str):
+    def historicalNews(self, requestId: int, time: str, providerCode: str, articleId: str, headline: str):
         """returns historical news headlines"""
-        self.request_manager.get(requestId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(requestId).on_data(**args)
 
-    def historicalNewsEnd(self, requestId:int, hasMore:bool):
+    def historicalNewsEnd(self, requestId: int, hasMore: bool):
         """signals end of historical news"""
-        self.request_manager.get(requestId).on_data(locals())
+        args = locals()
+        del args["self"]
+        del args["reqId"]
+        self.request_manager.mark_finished(requestId, **args)
 
-    def headTimestamp(self, reqId:int, headTimestamp:str):
+    def headTimestamp(self, reqId: int, headTimestamp: str):
         """returns earliest available data of a type of data for a particular contract"""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
-    def histogramData(self, reqId:int, items:HistogramData):
+    def histogramData(self, reqId: int, items: HistogramData):
         """returns histogram data for a contract"""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
     def historicalDataUpdate(self, reqId: int, bar: BarData):
         """returns updates in real time when keepUpToDate is set to True"""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
     def rerouteMktDataReq(self, reqId: int, conId: int, exchange: str):
         """returns reroute CFD contract information for market data request"""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
     def rerouteMktDepthReq(self, reqId: int, conId: int, exchange: str):
         """returns reroute CFD contract information for market depth request"""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
     def marketRule(self, marketRuleId: int, priceIncrements: ListOfPriceIncrements):
         """returns minimum price increment structure for a particular market rule ID"""
@@ -697,35 +740,51 @@ class BrokerPlatform(EWrapper):
 
     def pnl(self, reqId: int, dailyPnL: float, unrealizedPnL: float, realizedPnL: float):
         """returns the daily PnL for the account"""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
     def pnlSingle(self, reqId: int, pos: int, dailyPnL: float, unrealizedPnL: float, realizedPnL: float, value: float):
         """returns the daily PnL for a single position in the account"""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
     def historicalTicks(self, reqId: int, ticks: ListOfHistoricalTick, done: bool):
         """returns historical tick data when whatToShow=MIDPOINT"""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
     def historicalTicksBidAsk(self, reqId: int, ticks: ListOfHistoricalTickBidAsk, done: bool):
         """returns historical tick data when whatToShow=BID_ASK"""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
     def historicalTicksLast(self, reqId: int, ticks: ListOfHistoricalTickLast, done: bool):
         """returns historical tick data when whatToShow=TRADES"""
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
     def tickByTickAllLast(self, reqId: int, tickType: int, time: int, price: float,
                           size: int, attribs: TickAttrib, exchange: str,
                           specialConditions: str):
         """returns tick-by-tick data for tickType = "Last" or "AllLast" """
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
     def tickByTickBidAsk(self, reqId: int, time: int, bidPrice: float, askPrice: float,
                          bidSize: int, askSize: int, attribs: TickAttrib):
         """returns tick-by-tick data for tickType = "BidAsk" """
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
     def tickByTickMidPoint(self, reqId: int, time: int, midPoint: float):
         """returns tick-by-tick data for tickType = "MidPoint" """
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
