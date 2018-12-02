@@ -476,17 +476,15 @@ class BrokerPlatform(EWrapper):
         self.request_manager.get(reqId).on_data(locals())
 
 
-    def deltaNeutralValidation(self, reqId:int, underComp:UnderComp):
-        """Upon accepting a Delta-Neutral RFQ(request for quote), the
-        server sends a deltaNeutralValidation() message with the UnderComp
-        structure. If the delta and price fields are empty in the original
-        request, the confirmation will contain the current values from the
-        server. These values are locked when the RFQ is processed and remain
-        locked until the RFQ is canceled."""
+    # def deltaNeutralValidation(self, reqId:int, underComp:UnderComp):
+    #     """Upon accepting a Delta-Neutral RFQ(request for quote), the
+    #     server sends a deltaNeutralValidation() message with the UnderComp
+    #     structure. If the delta and price fields are empty in the original
+    #     request, the confirmation will contain the current values from the
+    #     server. These values are locked when the RFQ is processed and remain
+    #     locked until the RFQ is canceled."""
 
-        self.request_manager.get(reqId).on_data(locals())
-
-
+    #     self.request_manager.get(reqId).on_data(locals())
 
     def commissionReport(self, commissionReport:CommissionReport):
         """The commissionReport() callback is triggered as follows:
