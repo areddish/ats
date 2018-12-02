@@ -2,7 +2,7 @@ from ibapi.wrapper import EWrapper
 from ibapi.client import EClient
 from ibapi.common import *
 from ibapi.utils import *
-from ibapi.contract import (Contract, ContractDetails, UnderComp)
+from ibapi.contract import (Contract, ContractDetails)
 from ibapi.order import Order
 from ibapi.order_state import OrderState
 from ibapi.execution import Execution
