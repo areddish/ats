@@ -1,9 +1,11 @@
 import os
 import argparse
+import time
+
 
 from ats.ats import BrokerPlatform
 from ats.assets import Stock
-from ats.requests import *
+from ats.requests.contractdetails import ContractDetailsRequest
 
 if "__main__" == __name__:
     print("Starting up...")
@@ -29,23 +31,26 @@ if "__main__" == __name__:
     trader = BrokerPlatform(args.port, args.id)
     trader.connect()
 
-    for sym in ["AAPL", "TNA", "MSFT", "SPY", "TSLA", "BAC", "AMZN"]:
-        details_req = ContractDetailsRequest(Stock(sym))
-
-    #trader.reqMktData(12, Stock("SPY"), "", False, False, [])
-
-    # print("requesting bars")
-    # trader.reqRealTimeBars(1, SP500, 5, "TRADES", True, [])
-    # trader.reqRealTimeBars(2, Stock("SPY"), 5, "TRADES", True, [])
-    # trader.reqRealTimeBars(3, Stock("TNA"), 5, "TRADES", True, [])
-    # #trader.reqRealTimeBars(23, Stock("MSFT"), 5, "BID", True, [])
-    # #trader.reqRealTimeBars(24, Stock("AAPL"), 5, "TRADES", True, [])
-    trader.reqRealTimeBars(25, Future("ES"), 5, "TRADES", True, [])
-
     try:
-        sym = "a"
-        while (sym != "" and trader.isConnected()):
-            time.sleep(2)
+
+
+        for sym in ["AAPL", "TNA", "MSFT", "SPY", "TSLA", "BAC", "AMZN"]:
+            details_req = ContractDetailsRequest(Stock(sym))
+            trader.handle_request(details_req)
+
+        #trader.reqMktData(12, Stock("SPY"), "", False, False, [])
+
+        # print("requesting bars")
+        # trader.reqRealTimeBars(1, SP500, 5, "TRADES", True, [])
+        # trader.reqRealTimeBars(2, Stock("SPY"), 5, "TRADES", True, [])
+        # trader.reqRealTimeBars(3, Stock("TNA"), 5, "TRADES", True, [])
+        # #trader.reqRealTimeBars(23, Stock("MSFT"), 5, "BID", True, [])
+        # #trader.reqRealTimeBars(24, Stock("AAPL"), 5, "TRADES", True, [])
+        #trader.reqRealTimeBars(25, Future("ES"), 5, "TRADES", True, [])
+
+        # sym = "a"
+        # while (sym != "" and trader.isConnected()):
+        #     time.sleep(2)
     except KeyboardInterrupt:
         print ("Interrupt! Closing...")
     #     print ("Enter symbol")

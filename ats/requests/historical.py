@@ -23,14 +23,14 @@ class HistoricalDataRequest(Request):
         
         return False
 
-    def on_data(self, *args):
-        bar = args["bar"]
+    def on_data(self, **kwargs):
+        bar = kwargs["bar"]
 
         bar_date = datetime.datetime.fromtimestamp(int(bar.date))
         self.earliest_date_received = min(self.earliest_date_received, bar_date)
         self.bars.append(bar)
 
-    def complete(self, *args):
+    def complete(self, **kwargs):
         with open(os.path.join(self.folder, f"{self.symbol}-{self.end.strftime('%m-%d-%Y')}.txt"),"wt") as data_file:
             for b in self.bars:
                 print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)

@@ -14,12 +14,14 @@ class RequestManager():
         self.available_single_use_ids = list(range(2000, 2100))
         self.requests = {}
 
-    def add(self, request: Request):
-        id = self.__get_next_free_id(request.request_type, request.is_synchronus)
+    def add(self, request: Request):        
+        id = self.__get_next_free_id(request.request_type, request.is_synchronous)
         request.request_id = id
         self.requests[id] = request
+        print(self.__class__,"Adding request:", id, type(request))
 
     def get(self, request_id):
+        print (self.__class__,"Getting:", request_id)
         return self.requests[request_id]
 
     # def create_sync_request(self):
@@ -29,10 +31,10 @@ class RequestManager():
     #     self.requests[id] = e
     #     return id, e
 
-    def mark_finished(self, reqId, *args):
+    def mark_finished(self, reqId, **kwargs):
         request = self.requests[reqId]        
-        request.complete(args)
-        self.free_request(reqId)
+        request.complete(**kwargs)
+        self.__free_request(reqId)
 
     def __get_next_free_id(self, request_category, single_use=False):
         

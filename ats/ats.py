@@ -14,6 +14,8 @@ from .orders import *
 from .barutils import *
 from .requests.request import Request
 from .requests.requestmgr import RequestManager
+from .requests.contractdetails import ContractDetailsRequest
+from .requests.historical import HistoricalDataRequest
 
 from threading import Thread, Event
 import logging
@@ -44,7 +46,7 @@ class BrokerPlatform(EWrapper):
         self.order_manager = OrderManager()
 
     def error(self, reqId: int, errorCode: int, errorString: str):
-        if (reqId):
+        if (reqId != -1):
             self.request_manager.get(reqId).on_error(errorCode, errorString)
             return
 
@@ -76,15 +78,9 @@ class BrokerPlatform(EWrapper):
         # Now we are ready and really connected.
         self.connect_event.set()
 
-    def contractDetails(self, reqId: int, contractDetails: ContractDetails):
-        this.request_manager.get(reqId).on_data(locals())
-
-    def contractDetailsEnd(self, reqId: int):
-        self.request_manager.mark_finished(reqId)
-
-    def tickPrice(self, reqId: int, tickType: int, price: float,
-                  attrib: TickAttrib):
-        print(reqId, tickType, price, attrib)
+    # def tickPrice(self, reqId: int, tickType: int, price: float,
+    #               attrib: TickAttrib):
+    #     print(reqId, tickType, price, attrib)
 
     # def register_request(obj):
     #     reqId = self.request_manager.get_next_free_id(single_use = True)
@@ -120,7 +116,7 @@ class BrokerPlatform(EWrapper):
         if (request_type == HistoricalDataRequest):
             self.client.reqHistoricalData(request.request_id, request.contract, to_ib_timestr(request.end), request.duration, request.bar_size, "TRADES", 1, 2, False, [])
         elif (request_type == ContractDetailsRequest):
-            self.client.reqContractDetails(reqeust.request_id, request.contract)
+            self.client.reqContractDetails(request.request_id, request.contract)
 
         # If synchrononous wait on it.
         if (request.is_synchronous):
@@ -286,8 +282,9 @@ class BrokerPlatform(EWrapper):
         """Receives the full contract's definitons. This method will return all
         contracts matching the requested via EEClientSocket::reqContractDetails.
         For example, one can obtain the whole option chain with it."""
-
-        self.request_manager.get(reqId).on_data(locals())
+        args = locals()
+        del args["self"]
+        self.request_manager.get(reqId).on_data(**args)
 
 
     def bondContractDetails(self, reqId:int, contractDetails:ContractDetails):
@@ -301,8 +298,10 @@ class BrokerPlatform(EWrapper):
         """This function is called once all contract details for a given
         request are received. This helps to define the end of an option
         chain."""
-
-        self.logAnswer(current_fn_name(), vars())
+        args = locals()
+        del args["self"]
+        del args["reqId"]
+        self.request_manager.mark_finished(reqId, **args)
 
 
     def execDetails(self, reqId:int, contract:Contract, execution:Execution):

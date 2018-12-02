@@ -44,11 +44,11 @@ if "__main__" == __name__:
         def p(ts):
             ts_int = int(ts)
             time = datetime.datetime.fromtimestamp(ts_int)
-            print (symbols_map, ts, time.strftime("%m-%d-%Y %H:%M:%S"))
+            print (ts, time.strftime("%m-%d-%Y %H:%M:%S"))
             broker.cancelHeadTimeStamp(35)
 
         broker.register_historical_callback(35, p)
-        for s in zip(symbols, range(len(symboles)):
+        for s in symbols:
             print (s,end="")
             broker.reqHeadTimeStamp(35, Stock(s), "TRADES", 1, 2)
             time.sleep(3)
