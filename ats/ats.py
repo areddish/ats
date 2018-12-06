@@ -86,7 +86,7 @@ class BrokerPlatform(EWrapper):
         self.client.reqAccountUpdates(True, "")
 
     def disconnect(self):
-        self.client.reqAccountUpdates(False)
+        self.client.reqAccountUpdates(False, self.account_manager.account_name)
         if (self.is_connected):
             self.is_connected = False
             self.client.disconnect()

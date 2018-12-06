@@ -5,7 +5,7 @@ from ibapi.contract import Contract
 #######
 class AccountManager(object):
     def __init__(self):
-        self.account_name = None
+        self.account_name = ""
         self.account_balance = 0
         self.values = {}
         self.positions = {}
