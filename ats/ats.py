@@ -286,7 +286,7 @@ class BrokerPlatform(EWrapper):
                            accountName: str):
         """ This function is called only when ReqAccountUpdates on
         EEClientSocket object has been called. """
-        self.account_manager.update_portfolio(key, val, currency, accountName)
+        self.account_manager.update_account_value(key, val, currency, accountName)
 
     def updatePortfolio(self, contract: Contract, position: float,
                         marketPrice: float, marketValue: float,
@@ -303,7 +303,7 @@ class BrokerPlatform(EWrapper):
     def accountDownloadEnd(self, accountName: str):
         """This is called after a batch updateAccountValue() and
         updatePortfolio() is sent."""
-        self.account_manager.update_complete(accountName)
+        self.account_manager.account_download_end(accountName)
 
     def contractDetails(self, reqId: int, contractDetails: ContractDetails):
         """Receives the full contract's definitons. This method will return all
