@@ -52,7 +52,7 @@ if "__main__" == __name__:
 
         # sym = "a"
         # while (sym != "" and trader.isConnected()):
-        #     time.sleep(2)
+        time.sleep(25)
     except KeyboardInterrupt:
         print("Interrupt! Closing...")
     #     print ("Enter symbol")

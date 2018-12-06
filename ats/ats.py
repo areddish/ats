@@ -85,8 +85,11 @@ class BrokerPlatform(EWrapper):
         self.order_manager.next_valid_order_id = orderId
         # Now we are ready and really connected.
         self.connect_event.set()
+        # Start getting account updates
+        self.client.reqAccountUpdates(True)
 
     def disconnect(self):
+        self.client.reqAccountUpdates(False)
         if (self.is_connected):
             self.is_connected = False
             self.client.disconnect()
@@ -286,8 +289,7 @@ class BrokerPlatform(EWrapper):
                            accountName: str):
         """ This function is called only when ReqAccountUpdates on
         EEClientSocket object has been called. """
-
-        self.logAnswer(current_fn_name(), vars())
+        self.account_manager.update_portfolio(key, val, currency, accountName)
 
     def updatePortfolio(self, contract: Contract, position: float,
                         marketPrice: float, marketValue: float,
@@ -295,17 +297,16 @@ class BrokerPlatform(EWrapper):
                         realizedPNL: float, accountName: str):
         """This function is called only when reqAccountUpdates on
         EEClientSocket object has been called."""
-
-        self.logAnswer(current_fn_name(), vars())
+        self.account_manager.update_portfolio(contract, position, marketPrice, marketValue, averageCost, unrealizedPNL, realizedPNL, accountName)
 
     def updateAccountTime(self, timeStamp: str):
         self.logAnswer(current_fn_name(), vars())
+        # Ignored
 
     def accountDownloadEnd(self, accountName: str):
         """This is called after a batch updateAccountValue() and
         updatePortfolio() is sent."""
-
-        self.logAnswer(current_fn_name(), vars())
+        self.account_manager.update_complete(accountName)
 
     def contractDetails(self, reqId: int, contractDetails: ContractDetails):
         """Receives the full contract's definitons. This method will return all

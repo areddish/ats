@@ -1,6 +1,8 @@
 import os, sys, smtplib
 from email.mime.text import MIMEText
 
+from ats.ats import BrokerPlatform
+
 # configs
 from config import email_settings
 
