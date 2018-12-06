@@ -15,7 +15,7 @@ class AccountManager(object):
                            accountName: str):
         self.updating = True
         self.values[key] = (val, currency)
-        print(f"${accoutnName}: ${key} = ${value} ${currency}"")
+        print(f"${accountName}: ${key} = ${val} ${currency}")
 
     def accountDownloadEnd(self, accountName: str):
         self.account_name = accountName
