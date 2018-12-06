@@ -16,6 +16,7 @@ from .requests.request import Request
 from .requests.requestmgr import RequestManager
 from .requests.contractdetails import ContractDetailsRequest
 from .requests.historical import HistoricalDataRequest
+from .account import AccountManager
 
 from threading import Thread, Event
 import logging
@@ -48,6 +49,7 @@ class BrokerPlatform(EWrapper):
 
         self.request_manager = RequestManager()
         self.order_manager = OrderManager()
+        self.account_manager = AccountManager()
 
         self.thread = None
 
@@ -77,7 +79,7 @@ class BrokerPlatform(EWrapper):
         print("Connected!")
 
     # Until we get this notification we aren't really ready to run
-    # the rest of the system live.
+    # the rest of the system live. At least we cannot place orders.
     def nextValidId(self, orderId: int):
         print("Next valid order id", orderId)
         self.order_manager.next_valid_order_id = orderId

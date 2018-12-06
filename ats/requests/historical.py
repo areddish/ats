@@ -1,6 +1,8 @@
 import os
 import datetime
-from .request import Request
+
+from ..assets import Stock
+from request import Request
 
 class HistoricalDataRequest(Request):
     def __init__(self, symbol, end_date, duration="1 D", id = None):

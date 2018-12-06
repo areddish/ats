@@ -2,7 +2,7 @@ from threading import Event
 
 class Request(object):
     def __init__(self, contract, is_synchronous=True):
-        self.requset_id = None
+        self.request_id = None
         self.is_synchronous = is_synchronous
         self.event = Event() if self.is_synchronous else None
         self.contract = contract
