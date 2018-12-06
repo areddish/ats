@@ -17,8 +17,8 @@ class ContractDetailsRequest(Request):
         print(contractDetails.longName)
         print(contractDetails.industry)
         print(contractDetails.subcategory)
-        print(contractDetails.tradingHours)
-        print(contractDetails.liquidHours)
+        #print(contractDetails.tradingHours)
+        #print(contractDetails.liquidHours)
         print(contractDetails.contract)        
         
         #pickle.dump(contractDetails, open(contractDetails.contract.symbol, "wt"))
