@@ -11,17 +11,17 @@ class AccountManager(object):
         self.positions = {}
         self.updating = False
 
-    def updateAccountValue(self, key: str, val: str, currency: str,
+    def update_account_value(self, key: str, val: str, currency: str,
                            accountName: str):
         self.updating = True
         self.values[key] = (val, currency)
         print(f"${accountName}: ${key} = ${val} ${currency}")
 
-    def accountDownloadEnd(self, accountName: str):
+    def account_download_end(self, accountName: str):
         self.account_name = accountName
         self.updating = False
 
-    def updatePortfolio(self, contract: Contract, position: float,
+    def update_portfolio(self, contract: Contract, position: float,
                         marketPrice: float, marketValue: float,
                         averageCost: float, unrealizedPNL: float,
                         realizedPNL: float, accountName: str):
