@@ -12,10 +12,7 @@ from ibapi.commission_report import CommissionReport
 from .assets import *
 from .orders import *
 from .barutils import *
-from .requests.request import Request
-from .requests.requestmgr import RequestManager
-from .requests.contractdetails import ContractDetailsRequest
-from .requests.historical import HistoricalDataRequest
+from ats.requests import Request, RequestManager, ContractDetailsRequest, HistoricalDataRequest
 from .account import AccountManager
 
 from threading import Thread, Event
