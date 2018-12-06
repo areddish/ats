@@ -8,8 +8,7 @@ class ContractDetailsRequest(Request):
 
     def on_data(self, **kwargs):
         contractDetails = kwargs["contractDetails"]        
-        print(contractDetails.contract.symbol,
-              contractDetails.contractMonth, contractDetails.contract.conId, contractDetails)
+        print(contractDetails.contract.symbol, contractDetails.contractMonth, contractDetails.contract.conId)
         
         print(contractDetails.marketName)
         print(contractDetails.validExchanges)
