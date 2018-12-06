@@ -83,7 +83,7 @@ class BrokerPlatform(EWrapper):
         # Now we are ready and really connected.
         self.connect_event.set()
         # Start getting account updates
-        self.client.reqAccountUpdates(True)
+        self.client.reqAccountUpdates(True, "")
 
     def disconnect(self):
         self.client.reqAccountUpdates(False)
