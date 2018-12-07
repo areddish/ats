@@ -1,0 +1,3 @@
+<date> <open> <high> <low> <close> <volume> <barCount>
+
+To go from date to datetime you can run: datetime.datetime.fromtimestamp(int(date))
