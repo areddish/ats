@@ -89,7 +89,7 @@ if "__main__" == __name__:
         start = datetime.datetime.now()
 
         print(f"Requesting 1 bar days from {start.strftime('%m-%d-%Y')}")
-        request = HistoricalDataRequest(args.symbol, start, "5 S", "5 s", )
+        request = HistoricalDataRequest(args.symbol, start, "5 S", "5 s")
         request.set_data_folder(symbol_dir)
         broker.handle_request(request)
 
