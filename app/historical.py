@@ -83,7 +83,7 @@ if "__main__" == __name__:
         f"Collecting data for {args.symbol} from {args.start if args.start else 'MAX'} - {args.end}")
 
     try:
-        broker = BrokerPlatform(args.port, args.id, args.data_dir)
+        broker = BrokerPlatform(args.port, args.id)
         broker.connect()
 
         start = datetime.datetime.now()
