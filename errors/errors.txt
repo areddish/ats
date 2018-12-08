@@ -1,0 +1,6 @@
+##
+ERROR:root:ERROR 803 162 Historical Market Data Service error message:HMDS query
+ returned no data: GE@SMART Trades
+162 Historical Market Data Service error message:HMDS query returned no data: GE
+@SMART Trades
+

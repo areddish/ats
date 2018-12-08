@@ -84,6 +84,7 @@ if "__main__" == __name__:
 
     try:
         broker = BrokerPlatform(args.port, args.id)
+        broker.setConnOptions("+PACEAPI")
         broker.connect()
 
         start = datetime.datetime.now()
