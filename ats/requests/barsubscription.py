@@ -15,7 +15,7 @@ class RealTimeBarSubscription(object):
 
     def complete(self, **kwargs):
         # Called when subscription cancelled
-        print (f"Cancelling: {self.request_id} for {self.contract.symbol")
+        print (f"Cancelling: {self.request_id} for {self.contract.symbol}")
 
     def on_error(self, error_code, errorString):
         # We didn't handle it, outer error handler should process.

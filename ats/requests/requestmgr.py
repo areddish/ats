@@ -36,7 +36,7 @@ class RequestManager():
     #     self.requests[id] = e
     #     return id, e
 
-    def mark_finished(self, reqId, **kwargs = {}):
+    def mark_finished(self, reqId, **kwargs):
         request = self.requests[reqId]        
         request.complete(**kwargs)
         del self.requests[reqId]

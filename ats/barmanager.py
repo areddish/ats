@@ -1,5 +1,5 @@
-from barutils import BarAggregator
-from requests import RealTimeBarRequest
+from .barutils import BarAggregator
+from .requests import RealTimeBarSubscription
 
 # TODO: Duration in seconds? or enum?
 
