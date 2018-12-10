@@ -19,4 +19,5 @@ class RealTimeBarSubscription(object):
 
     def on_error(self, error_code, errorString):
         # We didn't handle it, outer error handler should process.
+        print (self.__class__, f"ERROR: {error_code}: {errorString}")
         return False

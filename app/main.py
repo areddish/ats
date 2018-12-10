@@ -53,8 +53,9 @@ if "__main__" == __name__:
 
         # sym = "a"
         # while (sym != "" and trader.isConnected()):
-        time.sleep(25)
+        time.sleep(5)
 
+        print ("Subscribing.... ")
         bar_man = BarManager(trader)
 
         esdec21 = Future("ES")
