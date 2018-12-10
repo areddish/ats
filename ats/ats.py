@@ -135,7 +135,7 @@ class BrokerPlatform(EWrapper):
             self.client.reqContractDetails(
                 request.request_id, request.contract)
         elif (request_type == RealTimeBarSubscription):
-            self.client.reqRealTimeBars(request.request_id, request.contract, 5)
+            self.client.reqRealTimeBars(request.request_id, request.contract, 5, "TRADES", 1, [])
 
         # If synchrononous wait on it.
         if (request.is_synchronous):
