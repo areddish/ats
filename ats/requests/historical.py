@@ -27,6 +27,8 @@ class HistoricalDataRequest(Request):
         return False
 
     def on_data(self, **kwargs):
+        assert self.request_id == kwargs["reqId"]
+        
         bar = kwargs["bar"]
 
         bar_date = datetime.datetime.fromtimestamp(int(bar.date))

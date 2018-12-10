@@ -24,6 +24,11 @@ class RequestManager():
         print (self.__class__,"Getting:", request_id)
         return self.requests[request_id]
 
+    # def remove(self, request: Request):
+    #     request_id = request.request_id
+    #     del self.requests[request_id]
+    #     self.__free_request(request_id)
+
     # def create_sync_request(self):
     #     id = self.get_next_free_id(True)
     #     e = Event()
@@ -31,9 +36,10 @@ class RequestManager():
     #     self.requests[id] = e
     #     return id, e
 
-    def mark_finished(self, reqId, **kwargs):
+    def mark_finished(self, reqId, **kwargs = {}):
         request = self.requests[reqId]        
         request.complete(**kwargs)
+        del self.requests[reqId]
         self.__free_request(reqId)
 
     def __get_next_free_id(self, request_category, single_use=False):

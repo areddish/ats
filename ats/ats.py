@@ -12,7 +12,7 @@ from ibapi.commission_report import CommissionReport
 from .assets import *
 from .orders import *
 from .barutils import *
-from ats.requests import Request, RequestManager, ContractDetailsRequest, HistoricalDataRequest
+from ats.requests import Request, RequestManager, ContractDetailsRequest, HistoricalDataRequest, RealTimeBarSubscription
 from .account import AccountManager
 
 from threading import Thread, Event
@@ -134,10 +134,21 @@ class BrokerPlatform(EWrapper):
         elif (request_type == ContractDetailsRequest):
             self.client.reqContractDetails(
                 request.request_id, request.contract)
+        elif (request_type == RealTimeBarSubscription):
+            self.client.reqRealTimeBars(request.request_id, request.contract, 5)
 
         # If synchrononous wait on it.
         if (request.is_synchronous):
             request.event.wait()
+
+    def cancel_request(self, request: Request):
+        # Process it based on type, making appropriate calls into the client.
+        request_type = type(request)
+
+        if (request_type == RealTimeBarSubscription):
+            self.client.cancelRealTimeBars(request.request_id)
+
+        self.request_manager.mark_finished(request.request_id)
 
     def historicalData(self, reqId, bar):
         args = locals()
@@ -150,21 +161,16 @@ class BrokerPlatform(EWrapper):
         del args["reqId"]
         self.request_manager.mark_finished(reqId, **args)
 
-    def reqRealTimeBars(self, reqId, contract, barSize: int,
-                        whatToShow: str, useRTH: bool,
-                        realTimeBarsOptions):
-        self.bar_series_builder[reqId] = barutils.BarAggregator(
-            contract, self.data_dir)
-        super().reqRealTimeBars(reqId, contract, barSize,
-                                whatToShow, useRTH, realTimeBarsOptions)
+    # def reqRealTimeBars(self, reqId, contract, barSize: int,
+    #                     whatToShow: str, useRTH: bool,
+    #                     realTimeBarsOptions):
+    #     self.bar_series_builder[reqId] = barutils.BarAggregator(
+    #         contract, self.data_dir)
 
     def realtimeBar(self, reqId: int, timeStamp: int, open: float, high: float,
                     low: float, close: float, volume: int, wap: float,
                     count: int):
         global bars
-        bars += 1
-        super().realtimeBar(reqId, timeStamp, open, high, low, close, volume, wap, count)
-
         b = BarData()
         b.open = open
         b.high = high
@@ -175,12 +181,7 @@ class BrokerPlatform(EWrapper):
         b.average = wap
         b.barCount = count
 
-        self.bar_series_builder[reqId].add_bar(b)
-        local_time = time.localtime(timeStamp)
-        pretty_print_time = time.strftime('%Y-%m-%d %H:%M:%S', local_time)
-        print(reqId, pretty_print_time, high, low, open, close,
-              volume, count)
-        pass
+        self.request_manager.on_data({ "reqId": reqId, "bar": bar})
 
     def marketDataType(self, reqId: TickerId, marketDataType: int):
         """TWS sends a marketDataType(type) callback to the API, where
