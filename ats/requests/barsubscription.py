@@ -1,9 +1,8 @@
-from threading import Event
+from .request import Request
 
-
-class RealTimeBarSubscription(object):
+class RealTimeBarSubscription(Request):
     def __init__(self, contract, bar_manager):
-        super().__init__(contract, False)
+        super().__init__(contract, is_synchronous=False)
         self.bar_manager = bar_manager
 
     def on_data(self, **kwargs):
