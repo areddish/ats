@@ -28,6 +28,6 @@ class BarManager(object):
     def unsubscribe(self, contract, duration="1 min"):
         # Remove/Flsuh self.aggregators[contract.symbol]
 
-        request = self.subscriptionRequests(contract.symbol)
+        request = self.subscriptionRequests[contract.symbol]
         self.broker.cancel_request(request)
         

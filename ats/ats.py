@@ -182,7 +182,7 @@ class BrokerPlatform(EWrapper):
         b.average = wap
         b.barCount = count
 
-        self.request_manager.get(reqId).on_data({ "reqId": reqId, "bar": b})
+        self.request_manager.get(reqId).on_data(**{ "reqId": reqId, "bar": b})
 
     def marketDataType(self, reqId: TickerId, marketDataType: int):
         """TWS sends a marketDataType(type) callback to the API, where
