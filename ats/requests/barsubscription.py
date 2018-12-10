@@ -3,7 +3,7 @@ from threading import Event
 
 class RealTimeBarSubscription(object):
     def __init__(self, contract, bar_manager):
-        super().__init__(contract, is_synchronous=False)
+        super().__init__(contract, False)
         self.bar_manager = bar_manager
 
     def on_data(self, **kwargs):
