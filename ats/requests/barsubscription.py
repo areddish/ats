@@ -11,6 +11,7 @@ class RealTimeBarSubscription(object):
 
         bar = kwargs["bar"]
         self.bar_manager.on_bar(self.contract, bar)
+        print (f"BAR: {bar}")
 
     def complete(self, **kwargs):
         # Called when subscription cancelled

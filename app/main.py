@@ -3,7 +3,8 @@ import argparse
 import time
 
 from ats.ats import BrokerPlatform
-from ats.assets import Stock
+from ats.barmanager import BarManager
+from ats.assets import Stock, Future
 from ats.requests import ContractDetailsRequest
 
 if "__main__" == __name__:
@@ -53,6 +54,14 @@ if "__main__" == __name__:
         # sym = "a"
         # while (sym != "" and trader.isConnected()):
         time.sleep(25)
+
+        bar_man = BarManager(trader)
+
+        esdec21 = Future("ES")
+        esdec21.lastTradeDateOrContractMonth = "201812"
+        bar_man.subscribe(esdec21)
+
+        time.sleep(60)
     except KeyboardInterrupt:
         print("Interrupt! Closing...")
     #     print ("Enter symbol")
