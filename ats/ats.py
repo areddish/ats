@@ -167,23 +167,6 @@ class BrokerPlatform(EWrapper):
     #     self.bar_series_builder[reqId] = barutils.BarAggregator(
     #         contract, self.data_dir)
 
-    def realtimeBar(self, reqId: int, timeStamp: int, open: float, high: float,
-                    low: float, close: float, volume: int, wap: float,
-                    count: int):
-        print("onbar")
-        #global bars
-        b = BarData()
-        b.open = open
-        b.high = high
-        b.time = timeStamp
-        b.low = low
-        b.close = close
-        b.volume = volume
-        b.average = wap
-        b.barCount = count
-
-        self.request_manager.get(reqId).on_data(**{ "reqId": reqId, "bar": b})
-
     def marketDataType(self, reqId: TickerId, marketDataType: int):
         """TWS sends a marketDataType(type) callback to the API, where
         type is set to Frozen or RealTime, to announce that market data has been
@@ -481,6 +464,18 @@ class BrokerPlatform(EWrapper):
             for TRADES)."""
         args = locals()
         del args["self"]
+        print("onbar")
+        #global bars
+        b = BarData()
+        b.open = open
+        b.high = high
+        b.time = timeStamp
+        b.low = low
+        b.close = close
+        b.volume = volume
+        b.average = wap
+        b.barCount = count
+        args["bar"] = b
         self.request_manager.get(reqId).on_data(**args)
 
     def currentTime(self, time: int):
