@@ -372,9 +372,10 @@ class BrokerPlatform(EWrapper):
             available for trading 3 - Exchange is available for trading
         message - the message
         origExchange -    the exchange where the message comes from.  """
-        args = locals()
-        del args["self"]
-        self.request_manager.get(reqId).on_data(**args)
+        # args = locals()
+        # del args["self"]
+        # self.request_manager.get(reqId).on_data(**args)
+        raise NotImplementedError
 
     def managedAccounts(self, accountsList: str):
         """Receives a comma-separated string with the managed account ids."""
@@ -467,9 +468,9 @@ class BrokerPlatform(EWrapper):
         print("onbar")
         #global bars
         b = BarData()
+        b.time = time
         b.open = open
         b.high = high
-        b.time = timeStamp
         b.low = low
         b.close = close
         b.volume = volume
