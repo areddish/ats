@@ -170,7 +170,8 @@ class BrokerPlatform(EWrapper):
     def realtimeBar(self, reqId: int, timeStamp: int, open: float, high: float,
                     low: float, close: float, volume: int, wap: float,
                     count: int):
-        global bars
+        print("onbar")
+        #global bars
         b = BarData()
         b.open = open
         b.high = high
@@ -181,7 +182,7 @@ class BrokerPlatform(EWrapper):
         b.average = wap
         b.barCount = count
 
-        self.request_manager.on_data({ "reqId": reqId, "bar": bar})
+        self.request_manager.get(reqId).on_data({ "reqId": reqId, "bar": b})
 
     def marketDataType(self, reqId: TickerId, marketDataType: int):
         """TWS sends a marketDataType(type) callback to the API, where
