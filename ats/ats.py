@@ -12,7 +12,7 @@ from ibapi.commission_report import CommissionReport
 from .assets import *
 from .orders import *
 from .barutils import *
-from ats.requests import Request, RequestManager, ContractDetailsRequest, HistoricalDataRequest, RealTimeBarSubscription
+from ats.requests import *
 from .account import AccountManager
 
 from threading import Thread, Event
@@ -136,7 +136,9 @@ class BrokerPlatform(EWrapper):
                 request.request_id, request.contract)
         elif (request_type == RealTimeBarSubscription):
             self.client.reqRealTimeBars(request.request_id, request.contract, 5, "TRADES", 1, [])
-
+        elif (request_type == RealTimeMarketSubscription):
+            self.client.reqMktData(request.request_id, request.contract, "", False, false, [])
+            
         # If synchrononous wait on it.
         if (request.is_synchronous):
             request.event.wait()
@@ -468,6 +470,7 @@ class BrokerPlatform(EWrapper):
         print("onbar")
         #global bars
         b = BarData()
+        # TODO: This isn't on a BarData, that's a historical thing.
         b.time = time
         b.open = open
         b.high = high

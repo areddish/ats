@@ -5,7 +5,7 @@ import time
 from ats.ats import BrokerPlatform
 from ats.barmanager import BarManager
 from ats.assets import Stock, Future
-from ats.requests import ContractDetailsRequest
+from ats.requests import *
 
 if "__main__" == __name__:
     print("Starting up...")
@@ -61,6 +61,8 @@ if "__main__" == __name__:
         esdec21 = Future("ES")
         esdec21.lastTradeDateOrContractMonth = "201812"
         bar_man.subscribe(esdec21)
+
+        broker.handle_request(RealTimeMarketSubscription(Stock("SPY")))
 
         # wait 5 hrs to get data
         time.sleep(5*60*60)

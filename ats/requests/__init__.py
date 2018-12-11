@@ -4,11 +4,14 @@ from .requestmgr import RequestManager
 from .contractdetails import ContractDetailsRequest
 from .historical import HistoricalDataRequest
 from .barsubscription import RealTimeBarSubscription
+from .marketsubscription import RealTimeMarketSubscription
+
 _all__ = [
     'Request',
     'RequestType',
     'RequestManager',
     'ContractDetailsRequest',
     'HistoricalDataRequest',
-    'RealTimeBarSubscription'
+    'RealTimeBarSubscription',
+    'RealTimeMarketSubscription'
 ]

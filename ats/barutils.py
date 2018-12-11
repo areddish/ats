@@ -40,6 +40,7 @@ class BarAggregator(EventGenerator):
                 self.bars.append(bar)
                 if (self.callback):
                     self.callback(bar)
+                self.curent_bar = None
 
         elif bar_time.second == 0:
             # start this bar
@@ -49,7 +50,7 @@ class BarAggregator(EventGenerator):
             new_bar.open = bar.open
             new_bar.high = bar.high
             new_bar.low = bar.low
-            new_bar.close =bar.close
+            new_bar.close = bar.close
             new_bar.volume = bar.volume
             new_bar.average = bar.average
             new_bar.barCount = bar.barCount
