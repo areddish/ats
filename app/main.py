@@ -62,7 +62,7 @@ if "__main__" == __name__:
         esdec21.lastTradeDateOrContractMonth = "201812"
         bar_man.subscribe(esdec21)
 
-        broker.handle_request(RealTimeMarketSubscription(Stock("SPY")))
+        trader.handle_request(RealTimeMarketSubscription(Stock("SPY")))
 
         # wait 5 hrs to get data
         time.sleep(5*60*60)

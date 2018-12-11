@@ -1,7 +1,7 @@
 from .request import Request
 
 class RealTimeMarketSubscription(Request):
-    def __init__(self, contract, bar_manager):
+    def __init__(self, contract):
         super().__init__(contract, is_synchronous=False)
 
     def on_data(self, **kwargs):
