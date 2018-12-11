@@ -62,18 +62,24 @@ if "__main__" == __name__:
         esdec21.lastTradeDateOrContractMonth = "201812"
         bar_man.subscribe(esdec21)
 
-        trader.handle_request(RealTimeMarketSubscription(Stock("SPY")))
+        mkt_sub = RealTimeMarketSubscription(Stock("SPY"))
+        trader.handle_request(mkt_sub)
 
-        # wait 5 hrs to get data
-        time.sleep(5*60*60)
+        trader.run()
+        
         bar_man.unsubscribe(esdec21)
+        trader.cancel_request(mkit_sub)
     except KeyboardInterrupt:
         print("Interrupt! Closing...")
+        print("Sending Disconnect. ")
+        print("Waiting for disconnect...")
+        trader.disconnect()
+
     #     print ("Enter symbol")
     #     sym = input()
     #     trader.find_contract(sym)
 
-    print("Sending Disconnect. ")
-    print("Waiting for disconnect...")
-    trader.disconnect()
+    #print("Sending Disconnect. ")
+    #print("Waiting for disconnect...")
+    #trader.disconnect()
     print("Goodbye")

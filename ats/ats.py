@@ -49,6 +49,8 @@ class BrokerPlatform(EWrapper):
         self.account_manager = AccountManager()
 
         self.thread = None
+        self.connect_event = Event()
+        self.disconnect_event = Event()
 
     def error(self, reqId: int, errorCode: int, errorString: str):
         if (reqId != -1):
@@ -69,7 +71,6 @@ class BrokerPlatform(EWrapper):
         self.client.connect(host, self.port, self.client_id)
         self.thread = Thread(target=self.client.run)
         self.thread.start()
-        self.connect_event = Event()
         self.is_connected = self.connect_event.wait(2)
 
     def connectAck(self):
@@ -92,7 +93,10 @@ class BrokerPlatform(EWrapper):
             self.client.disconnect()
         if (self.thread):
             self.thread.join()
+        self.disconnect_event.set()
 
+    def run(self):
+        self.disconnect_event.wait()
     # def tickPrice(self, reqId: int, tickType: int, price: float,
     #               attrib: TickAttrib):
     #     print(reqId, tickType, price, attrib)

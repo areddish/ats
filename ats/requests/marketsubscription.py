@@ -5,7 +5,7 @@ class RealTimeMarketSubscription(Request):
         super().__init__(contract, is_synchronous=False)
 
     def on_data(self, **kwargs):
-        assert self.request_id == kwargs["reqId"]
+        #assert self.request_id == kwargs["reqId"]
 
         print (f"Tick:")
 
@@ -15,5 +15,5 @@ class RealTimeMarketSubscription(Request):
 
     def on_error(self, error_code, errorString):
         # We didn't handle it, outer error handler should process.
-        print (self.__class__, f"ERROR: {error_code}: {errorString}")
+        print (self.__class__.__name__, f"ERROR: {error_code}: {errorString}")
         return False
