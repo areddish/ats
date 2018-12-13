@@ -67,8 +67,9 @@ if "__main__" == __name__:
 
         trader.run()
         
+        print ("Unsubscribing...")
         bar_man.unsubscribe(esdec21)
-        trader.cancel_request(mkit_sub)
+        trader.cancel_request(mkt_sub)
     except KeyboardInterrupt:
         print("Interrupt! Closing...")
         print("Sending Disconnect. ")
