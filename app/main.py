@@ -41,20 +41,6 @@ if "__main__" == __name__:
             details_req = ContractDetailsRequest(Stock(sym))
             trader.handle_request(details_req)
 
-        #trader.reqMktData(12, Stock("SPY"), "", False, False, [])
-
-        # print("requesting bars")
-        # trader.reqRealTimeBars(1, SP500, 5, "TRADES", True, [])
-        # trader.reqRealTimeBars(2, Stock("SPY"), 5, "TRADES", True, [])
-        # trader.reqRealTimeBars(3, Stock("TNA"), 5, "TRADES", True, [])
-        # #trader.reqRealTimeBars(23, Stock("MSFT"), 5, "BID", True, [])
-        # #trader.reqRealTimeBars(24, Stock("AAPL"), 5, "TRADES", True, [])
-        #trader.reqRealTimeBars(25, Future("ES"), 5, "TRADES", True, [])
-
-        # sym = "a"
-        # while (sym != "" and trader.isConnected()):
-        time.sleep(5)
-
         print ("Subscribing.... ")
         bar_man = BarManager(trader)
 
@@ -75,12 +61,4 @@ if "__main__" == __name__:
         print("Sending Disconnect. ")
         print("Waiting for disconnect...")
         trader.disconnect()
-
-    #     print ("Enter symbol")
-    #     sym = input()
-    #     trader.find_contract(sym)
-
-    #print("Sending Disconnect. ")
-    #print("Waiting for disconnect...")
-    #trader.disconnect()
     print("Goodbye")
