@@ -1,0 +1,26 @@
+import os
+import datetime
+
+earliest = datetime.datetime.now()
+latest = datetime.datetime.now() - datetime.timedelta(days=1000)
+
+data = {}
+for f in os.listdir("c:\\stock-data\\AAPL"):
+    with open(f,"rt") as file:
+        print ("Processing:", f)
+        for l in file.readlines():
+            parts = l.split(" ")
+            date = int(parts[0])
+            o = float(parts[1])
+            h = float(parts[2])
+            l = float(parts[3])
+            c = float(parts[4])
+            v = int(parts[5])
+            bc = int(parts[6])
+            dt = datetime.datetime.fromtimestamp(date)
+            data[dt] = [o,l,h,c,v,bc]
+            earliest = min(earliest, dt)
+            latest = max(latest, dt)
+
+print (f"Earliest: {earliest.strftime('%m-%d-%Y: %H:%M:%S')}")
+print (f"Latest: {latest.strftime('%m-%d-%Y: %H:%M:%S')}")

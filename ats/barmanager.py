@@ -13,7 +13,7 @@ class BarManager(object):
         agg = self.aggregators[contract.symbol]
 
         agg.add_bar(bar)
-                # local_time = time.localtime(timeStamp)
+        # local_time = time.localtime(timeStamp)
         # pretty_print_time = time.strftime('%Y-%m-%d %H:%M:%S', local_time)
         # print(reqId, pretty_print_time, high, low, open, close,
         #       volume, count)
@@ -26,7 +26,7 @@ class BarManager(object):
         self.broker.handle_request(request)
 
     def unsubscribe(self, contract, duration="1 min"):
-        # Remove/Flsuh self.aggregators[contract.symbol]
+        # Remove/Flush self.aggregators[contract.symbol]
 
         request = self.subscriptionRequests[contract.symbol]
         self.broker.cancel_request(request)
