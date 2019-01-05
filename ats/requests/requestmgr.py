@@ -21,7 +21,7 @@ class RequestManager():
         print(self.__class__,"Adding request:", id, type(request))
 
     def get(self, request_id):
-        print (self.__class__,"Getting:", request_id)
+        #print (self.__class__,"Getting:", request_id)
         return self.requests[request_id]
 
     # def remove(self, request: Request):

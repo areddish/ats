@@ -36,6 +36,8 @@ class HistoricalDataRequest(Request):
         self.bars.append(bar)
 
     def complete(self, **kwargs):
+        super().complete(**kwargs)
+
         print("Complete:", kwargs["start"], "-", kwargs["end"])
         print(f"Earliest bar received: {self.earliest_date_received}")
 
