@@ -33,6 +33,7 @@ class HistoricalDataRequest(Request):
 
         bar_date = datetime.datetime.fromtimestamp(int(bar.date))
         self.earliest_date_received = min(self.earliest_date_received, bar_date)
+        print ("Historical: recv", bar_date)
         self.bars.append(bar)
 
     def complete(self, **kwargs):
