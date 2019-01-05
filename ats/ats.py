@@ -36,13 +36,14 @@ def to_duration(dt_start, dt_end):
 
 
 class BrokerPlatform(EWrapper):
-    def __init__(self, port, client_id):
+    def __init__(self, port, client_id, use_pace_api=False):
         self.client = EClient(wrapper=self)
         EWrapper.__init__(self)
 
         self.client_id = client_id
         self.port = port
         self.is_connected = False
+        self.conn_options = "+PACEAPI" if use_pace_api else ""
 
         self.request_manager = RequestManager()
         self.order_manager = OrderManager()
@@ -68,6 +69,7 @@ class BrokerPlatform(EWrapper):
         print("winError", text, lastError)
 
     def connect(self, host="127.0.0.1"):
+        self.client.setConnOptions("+PACEAPI")
         self.client.connect(host, self.port, self.client_id)
         self.thread = Thread(target=self.client.run)
         self.thread.start()

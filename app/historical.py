@@ -1,5 +1,5 @@
 # Historical Data Download utility
-##
+#
 # Given a date range and a symbol it will collect data about that symbol
 import argparse
 import datetime
@@ -8,12 +8,9 @@ import threading
 import os
 from ats.ats import BrokerPlatform
 from ats.assets import Stock
-
-WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday',
-            'Thursday', 'Friday', 'Saturday', 'Sunday']
+from ats.requests import HistoricalDataRequest
 
 # TIMES are in EST
-
 DELTA_OFFSET = ((datetime.datetime.now(datetime.timezone.utc).astimezone().utcoffset().seconds / 3600) - 19.0) * 60 * 60
 
 
@@ -56,12 +53,13 @@ if "__main__" == __name__:
     arg_parser.add_argument("-c", "--contract", action="store",
                             type=str, help="Contract symbol", dest="symbol", default="AMZN")
     arg_parser.add_argument("-s", "--start", action="store",
-                            type=datetime.datetime, help="Start time", dest="start", default=None)
+                            type=datetime.datetime, help="Start time", dest="start", default=datetime.datetime.now())
     arg_parser.add_argument("-e", "--end", action="store", type=datetime.datetime,
                             help="End time", dest="end", default=datetime.datetime.now())
     args = arg_parser.parse_args()
 
     if (DELTA_OFFSET != 0):
+        print ("Lame but this app is hard coded to EST.")
         raise EnvironmentError
 
     print("Data Collection Tool")
@@ -79,24 +77,22 @@ if "__main__" == __name__:
         os.mkdir(symbol_dir, 0x755)
         print(f"Created: {symbol_dir}")
 
-    print(
-        f"Collecting data for {args.symbol} from {args.start if args.start else 'MAX'} - {args.end}")
+    print(f"Collecting data for {args.symbol} from {args.start if args.start else 'MAX'} - {args.end}")
 
     try:
-        broker = BrokerPlatform(args.port, args.id)
-        broker.setConnOptions("+PACEAPI")
+        broker = BrokerPlatform(args.port, args.id, use_pace_api=True)        
         broker.connect()
 
-        start = datetime.datetime.now()
+        start = args.start
 
         print(f"Requesting 1 bar days from {start.strftime('%m-%d-%Y')}")
-        request = HistoricalDataRequest(args.symbol, start, "5 S", "5 s")
+        request = HistoricalDataRequest(args.symbol, start, "1 D", "1 min")
         request.set_data_folder(symbol_dir)
         broker.handle_request(request)
 
-        with open(os.path.join(self.folder, f"{self.symbol}-{self.end.strftime('%m-%d-%Y')}.txt"), "wt") as data_file:
-            for b in request.bars:
-                print(
-                    f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
     except KeyboardInterrupt:
         print("Interrupt! Closing...")
+
+    print("Done!")
+    broker.disconnect()
+
