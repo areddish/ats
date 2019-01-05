@@ -32,13 +32,15 @@ class HistoricalDataRequest(Request):
         bar = kwargs["bar"]
 
         bar_date = datetime.datetime.fromtimestamp(int(bar.date))
-        self.earliest_date_received = min(
-            self.earliest_date_received, bar_date)
+        self.earliest_date_received = min(self.earliest_date_received, bar_date)
         self.bars.append(bar)
 
     def complete(self, **kwargs):
-        # with open(os.path.join(self.folder, f"{self.symbol}-{self.end.strftime('%m-%d-%Y')}.txt"), "wt") as data_file:
-        #     for b in self.bars:
-        #         print(
-        #             f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
         print("Complete:", kwargs["start"], "-", kwargs["end"])
+        print(f"Earliest bar received: {self.earliest_date_received}")
+
+        if self.folder:
+            with open(os.path.join(self.folder, f"{self.symbol}-{self.end.strftime('%m-%d-%Y')}.txt"), "wt") as data_file:
+                for b in self.bars:
+                    print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
+        
