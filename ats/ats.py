@@ -56,7 +56,7 @@ class BrokerPlatform(EWrapper):
     def error(self, reqId: int, errorCode: int, errorString: str):
         # First give the request a chance to handle the error. If it returns True it handled it and 
         # no further processing is required.
-        if (reqId != -1 and self.request_manager.get(reqId).on_error(errorCode, errorString))
+        if (reqId != -1 and self.request_manager.get(reqId).on_error(errorCode, errorString)):
             return
 
         if (errorCode == 2104 or errorCode == 2106):
@@ -168,6 +168,7 @@ class BrokerPlatform(EWrapper):
         args = locals()
         del args["self"]
         del args["reqId"]
+        print ("historicalDataEnd")
         self.request_manager.mark_finished(reqId, **args)
 
     # def reqRealTimeBars(self, reqId, contract, barSize: int,
