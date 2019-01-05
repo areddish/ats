@@ -54,8 +54,9 @@ class BrokerPlatform(EWrapper):
         self.disconnect_event = Event()
 
     def error(self, reqId: int, errorCode: int, errorString: str):
-        if (reqId != -1):
-            self.request_manager.get(reqId).on_error(errorCode, errorString)
+        # First give the request a chance to handle the error. If it returns True it handled it and 
+        # no further processing is required.
+        if (reqId != -1 and self.request_manager.get(reqId).on_error(errorCode, errorString))
             return
 
         if (errorCode == 2104 or errorCode == 2106):
@@ -69,7 +70,7 @@ class BrokerPlatform(EWrapper):
         print("winError", text, lastError)
 
     def connect(self, host="127.0.0.1"):
-        self.client.setConnOptions("+PACEAPI")
+        self.client.setConnOptions(self.conn_options)
         self.client.connect(host, self.port, self.client_id)
         self.thread = Thread(target=self.client.run)
         self.thread.start()
