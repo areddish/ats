@@ -33,7 +33,7 @@ def get_vix_futures_data():
         VX = Future("VIX", exchange="CFE")
         VX.lastTradeDateOrContractMonth = f"{date.strftime('%Y%m')}"
 
-        request = HistoricalDataRequest(VX, datetime.datetime.now(), "20 D", "1 D")
+        request = HistoricalDataRequest(VX, datetime.datetime.now(), "20 D", "1 day")
         request.set_data_folder("C:\\temp\\VX")
         requests.append(request)
         # Get the next month. If we roll over, then move to next year.
