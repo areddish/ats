@@ -19,6 +19,8 @@ def to_ib_timestr(dt):
 def to_duration(dt_start, dt_end):
     return f"{(dt_end - dt_start).seconds} S"
 
+VIX_LOCAL_SYMBOLS = [ "F", "G", "H", "J", "K", "M", "N", "Q", "U", "V", "X", "Z" ]
+
 def get_vix_futures_data():
     now = datetime.datetime.now()
     month = now.month
@@ -30,11 +32,15 @@ def get_vix_futures_data():
         print(f"Getting VX{str(i)}: {date.strftime('%Y%m')}")
 
         # TODO: Create delayed data request
-        VX = Future("VIX", exchange="CFE")
+        VX = Future("VIX")
         VX.lastTradeDateOrContractMonth = f"{date.strftime('%Y%m')}"
+        VX.exchange = "CFE"
+        VX.primaryExchange = ""
+        VX.localSymbol = "VX"+VIX_LOCAL_SYMBOLS[month-1]+str(year%10)
 
-        request = HistoricalDataRequest(VX, datetime.datetime.now(), "20 D", "1 day")
-        request.set_data_folder("C:\\temp\\VX")
+        print(VX.localSymbol)
+        request = HistoricalDataRequest(VX, datetime.datetime.now(), "5 D", "1 day")
+        request.set_data_folder("C:\\temp\\VX\\"+str(month))
         requests.append(request)
         # Get the next month. If we roll over, then move to next year.
         month += 1

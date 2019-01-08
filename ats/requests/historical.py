@@ -15,6 +15,23 @@ class HistoricalDataRequest(Request):
         self.bar_size = bar_size
         self.id = id
         self.earliest_date_received = end_date
+        self.expected_bars = self._count_of_bars(duration, bar_size)
+
+    def _count_of_bars(self, duration, size):
+        # assume 5 S bars
+        divisor = 5
+        if (size.lower() == "1 min"):
+            divisor = 60
+        elif (size.lower() == "1 day"):
+            divisor = 60 * 60 * 24
+
+        parts = duration.split(" ")
+        count = int(parts[0])
+        if (parts[1].upper() == "D"):
+            unit_to_seconds = 60 * 60 * 24
+
+        duration_in_seconds = count * unit_to_seconds
+        return duration_in_seconds // divisor
 
     def set_data_folder(self, folder):
         self.folder = folder
@@ -33,8 +50,11 @@ class HistoricalDataRequest(Request):
 
         bar_date = datetime.datetime.fromtimestamp(int(bar.date))
         self.earliest_date_received = min(self.earliest_date_received, bar_date)
-        print ("Historical: recv", bar_date)
+        print ("Historical: recv", bar_date, bar)
         self.bars.append(bar)
+        print(f"recv: {len(self.bars)}/{self.expected_bars}")
+        if len(self.bars) == self.expected_bars:
+            self.complete(**{ "start": None, "end": None})
 
     def complete(self, **kwargs):
         super().complete(**kwargs)
@@ -44,6 +64,7 @@ class HistoricalDataRequest(Request):
 
         if self.folder:
             with open(os.path.join(self.folder, f"{self.symbol}-{self.end.strftime('%m-%d-%Y')}.txt"), "wt") as data_file:
+                print(f"Symbol: {self.symbol} {self.contract.localSymbol}", file=data_file)
                 for b in self.bars:
                     print(f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
         
