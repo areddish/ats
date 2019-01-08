@@ -6,11 +6,11 @@ from .request import Request
 
 
 class HistoricalDataRequest(Request):
-    def __init__(self, symbol, end_date, duration="1 D", bar_size="1 min", id=None):
-        super().__init__(Stock(symbol))
+    def __init__(self, contract, end_date, duration="1 D", bar_size="1 min", id=None):
+        super().__init__(contract)
         self.bars = []
         self.end = end_date
-        self.symbol = symbol
+        self.symbol = contract.symbol
         self.duration = duration
         self.bar_size = bar_size
         self.id = id
