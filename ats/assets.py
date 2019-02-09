@@ -25,7 +25,7 @@ class Stock(Contract):
         self.currency = currency
         if primaryExchange != None:
             self.primaryExchange = primaryExchange
-        if symbol in tickers_that_need_primary_exchange:
+        elif symbol in tickers_that_need_primary_exchange:
             self.primaryExchange = tickers_that_need_primary_exchange[symbol]
 
 
@@ -50,6 +50,7 @@ class Future(Contract):
         self.symbol = symbol
         self.secType = "FUT"
         self.currency = "USD"
+        # TODO: (areddish) Should this default to current month? Next month?
         self.lastTradeDateOrContractMonth = "201806"
         self.primaryExchange = "GLOBEX"
         self.exchange = exchange
