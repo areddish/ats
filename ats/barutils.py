@@ -22,6 +22,8 @@ class BarAggregator(EventGenerator):
             self.five_second_file = None
 
     def add_bar(self, bar):
+        # assuming we are getting bars in order. need to add protection
+
         self.store_bar(bar, True)
         bar_time = datetime.datetime.fromtimestamp(bar.time)
         if self.current_bar:
@@ -40,7 +42,6 @@ class BarAggregator(EventGenerator):
                 self.bars.append(bar)
                 if (self.callback):
                     self.callback(bar)
-                self.curent_bar = None
 
         elif bar_time.second == 0:
             # start this bar
@@ -50,7 +51,7 @@ class BarAggregator(EventGenerator):
             new_bar.open = bar.open
             new_bar.high = bar.high
             new_bar.low = bar.low
-            new_bar.close = bar.close
+            new_bar.close =bar.close
             new_bar.volume = bar.volume
             new_bar.average = bar.average
             new_bar.barCount = bar.barCount
@@ -66,3 +67,17 @@ class BarAggregator(EventGenerator):
             print(bar_str, file=self.one_min_file)
             self.current_bar = None
             self.one_min_file.flush()
+
+
+'''
+    Produces a stream of in-order bars, but can handle out of order reception
+    i.e. accepts 5s bars
+         produces 1 min, but in order
+         
+'''
+class InOrderBarStream:
+    def __init__(self):
+        pass
+
+    def add_partial_bar(self):
+        pass
