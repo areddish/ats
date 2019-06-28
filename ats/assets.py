@@ -42,8 +42,9 @@ class Option(Contract):
         super().__init__()
         self.symbol = underlying
         self.secType = "OPT"
-
-
+        self.LastTradeDateOrContractMonth = expiry
+        self.currency = "USD"
+        
 class Future(Contract):
     def __init__(self, symbol, exchange=""):
         super().__init__()

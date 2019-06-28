@@ -28,6 +28,8 @@ bars = 0
 
 
 def to_ib_timestr(dt):
+    if not dt:
+        return ""
     return dt.strftime("%Y%m%d %H:%M:%S")
 
 
@@ -54,6 +56,8 @@ class BrokerPlatform(EWrapper):
         self.disconnect_event = Event()
 
     def error(self, reqId: int, errorCode: int, errorString: str):
+        print(reqId, errorCode, errorString)
+        
         # First give the request a chance to handle the error. If it returns True it handled it and 
         # no further processing is required.
         if (reqId != -1 and self.request_manager.get(reqId).on_error(errorCode, errorString)):
@@ -137,8 +141,8 @@ class BrokerPlatform(EWrapper):
         request_type = type(request)
         if (request_type == HistoricalDataRequest):
             self.client.reqHistoricalData(request.request_id, request.contract, to_ib_timestr(
-                request.end), request.duration, request.bar_size, "TRADES", 1, 2, False, [])
-        elif (request_type == ContractDetailsRequest):
+                request.end), request.duration, request.bar_size, "TRADES", 0, 2, False, [])
+        elif (request_type == ContractDetailsRequest or request_type == OptionChainRequest):
             self.client.reqContractDetails(
                 request.request_id, request.contract)
         elif (request_type == RealTimeBarSubscription):
