@@ -38,14 +38,13 @@ def to_duration(dt_start, dt_end):
 
 
 class BrokerPlatform(EWrapper):
-    def __init__(self, port, client_id, use_pace_api=False):
+    def __init__(self, port, client_id):
         self.client = EClient(wrapper=self)
         EWrapper.__init__(self)
 
         self.client_id = client_id
         self.port = port
         self.is_connected = False
-        self.conn_options = "+PACEAPI" if use_pace_api else ""
 
         self.request_manager = RequestManager()
         self.order_manager = OrderManager()
@@ -74,7 +73,6 @@ class BrokerPlatform(EWrapper):
         print("winError", text, lastError)
 
     def connect(self, host="127.0.0.1"):
-        self.client.setConnOptions(self.conn_options)
         self.client.connect(host, self.port, self.client_id)
         self.thread = Thread(target=self.client.run)
         self.thread.start()
@@ -172,7 +170,6 @@ class BrokerPlatform(EWrapper):
         args = locals()
         del args["self"]
         del args["reqId"]
-        print ("historicalDataEnd")
         self.request_manager.mark_finished(reqId, **args)
 
     # def reqRealTimeBars(self, reqId, contract, barSize: int,
