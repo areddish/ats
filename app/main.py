@@ -51,6 +51,12 @@ if "__main__" == __name__:
         mkt_sub = RealTimeMarketSubscription(Stock("SPY"))
         trader.handle_request(mkt_sub)
 
+# how to manage session?
+# how to get backfill data?
+# how to connect barman, strategy, indicators, and broker?
+
+        amzn_strategy = BollingBandPercentStrategy(Stock("AMZN"), bar_man)
+
         trader.run()
         
         print ("Unsubscribing...")

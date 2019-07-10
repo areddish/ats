@@ -28,6 +28,8 @@ bars = 0
 
 
 def to_ib_timestr(dt):
+    if not dt:
+        return ""
     return dt.strftime("%Y%m%d %H:%M:%S")
 
 
@@ -36,14 +38,13 @@ def to_duration(dt_start, dt_end):
 
 
 class BrokerPlatform(EWrapper):
-    def __init__(self, port, client_id, use_pace_api=False):
+    def __init__(self, port, client_id):
         self.client = EClient(wrapper=self)
         EWrapper.__init__(self)
 
         self.client_id = client_id
         self.port = port
         self.is_connected = False
-        self.conn_options = "+PACEAPI" if use_pace_api else ""
 
         self.request_manager = RequestManager()
         self.order_manager = OrderManager()
@@ -54,6 +55,8 @@ class BrokerPlatform(EWrapper):
         self.disconnect_event = Event()
 
     def error(self, reqId: int, errorCode: int, errorString: str):
+        print(reqId, errorCode, errorString)
+        
         # First give the request a chance to handle the error. If it returns True it handled it and 
         # no further processing is required.
         if (reqId != -1 and self.request_manager.get(reqId).on_error(errorCode, errorString)):
@@ -70,7 +73,6 @@ class BrokerPlatform(EWrapper):
         print("winError", text, lastError)
 
     def connect(self, host="127.0.0.1"):
-        self.client.setConnOptions(self.conn_options)
         self.client.connect(host, self.port, self.client_id)
         self.thread = Thread(target=self.client.run)
         self.thread.start()
@@ -137,8 +139,8 @@ class BrokerPlatform(EWrapper):
         request_type = type(request)
         if (request_type == HistoricalDataRequest):
             self.client.reqHistoricalData(request.request_id, request.contract, to_ib_timestr(
-                request.end), request.duration, request.bar_size, "TRADES", 1, 2, False, [])
-        elif (request_type == ContractDetailsRequest):
+                request.end), request.duration, request.bar_size, "TRADES", 0, 2, False, [])
+        elif (request_type == ContractDetailsRequest or request_type == OptionChainRequest):
             self.client.reqContractDetails(
                 request.request_id, request.contract)
         elif (request_type == RealTimeBarSubscription):
@@ -168,7 +170,6 @@ class BrokerPlatform(EWrapper):
         args = locals()
         del args["self"]
         del args["reqId"]
-        print ("historicalDataEnd")
         self.request_manager.mark_finished(reqId, **args)
 
     # def reqRealTimeBars(self, reqId, contract, barSize: int,
