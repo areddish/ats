@@ -11,6 +11,7 @@ from ats.assets import Stock
 
 WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday',
             'Thursday', 'Friday', 'Saturday', 'Sunday']
+from ats.requests import HistoricalDataRequest, ContractDetailsRequest
 
 # TIMES are in EST
 
@@ -88,6 +89,15 @@ if "__main__" == __name__:
         broker.connect()
 
         start = datetime.datetime.now()
+        stock = Stock(args.symbol)
+
+        # Get details on how far back we can go.
+        details_req = ContractDetailsRequest(stock)
+        broker.handle_request(details_req)
+
+        print(f"Available from:")
+        
+        start = args.start
 
         print(f"Requesting 1 bar days from {start.strftime('%m-%d-%Y')}")
         request = HistoricalDataRequest(args.symbol, start, "5 S", "5 s")
