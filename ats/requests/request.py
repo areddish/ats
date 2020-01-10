@@ -18,3 +18,17 @@ class Request(object):
     def on_error(self, error_code, errorString):
         # We didn't handle it, outer error handler should process.
         return False 
+
+class DummyRequest(Request):
+    def __init__(self):
+        super().__init__(None, True)
+
+    def on_data(self, **kwargs):
+        pass
+
+    def complete(self, **kwargs):
+        raise "Shouldn't happen"
+
+    def on_error(self, error_code, errorString):
+        # We didn't handle it, outer error handler should process.
+        return False 

@@ -38,7 +38,7 @@ def to_duration(dt_start, dt_end):
 
 
 class BrokerPlatform(EWrapper):
-    def __init__(self, port, client_id):
+    def __init__(self, port, client_id, wait_for_account=True):
         self.client = EClient(wrapper=self)
         EWrapper.__init__(self)
 
@@ -53,6 +53,8 @@ class BrokerPlatform(EWrapper):
         self.thread = None
         self.connect_event = Event()
         self.disconnect_event = Event()
+
+        self.wait_for_account = wait_for_account
 
     def error(self, reqId: int, errorCode: int, errorString: str):
         print(reqId, errorCode, errorString)
@@ -88,8 +90,10 @@ class BrokerPlatform(EWrapper):
         self.order_manager.next_valid_order_id = orderId
         # Now we are ready and really connected.
         self.connect_event.set()
-        # Start getting account updates
-        self.client.reqAccountUpdates(True, "")
+
+        if self.wait_for_account:
+            # Start getting account updates
+            self.client.reqAccountUpdates(True, "")
 
     def disconnect(self):
         self.client.reqAccountUpdates(False, self.account_manager.account_name)
@@ -147,6 +151,8 @@ class BrokerPlatform(EWrapper):
             self.client.reqRealTimeBars(request.request_id, request.contract, 5, "TRADES", 1, [])
         elif (request_type == RealTimeMarketSubscription):
             self.client.reqMktData(request.request_id, request.contract, "", False, False, [])
+        elif (request_type == DividendDetailsRequest):
+            self.client.reqMktData(request.request_id, request.contract, "456", False, False, [])
 
         # If synchrononous wait on it.
         if (request.is_synchronous):
@@ -158,6 +164,8 @@ class BrokerPlatform(EWrapper):
 
         if (request_type == RealTimeBarSubscription):
             self.client.cancelRealTimeBars(request.request_id)
+        elif (request_type == DividendDetailsRequest):
+            self.client.cancelMktData(request.request_id)
 
         self.request_manager.mark_finished(request.request_id)
 
@@ -746,7 +754,8 @@ class BrokerPlatform(EWrapper):
         del args["self"]
         self.request_manager.get(reqId).on_data(**args)
 
-    def marketRule(self, marketRuleId: int, priceIncrements: ListOfPriceIncrements):
+    #def marketRule(self, marketRuleId: int, priceIncrements: ListOfPriceIncrements):
+    def marketRule(self, marketRuleId: int, priceIncrements):
         """returns minimum price increment structure for a particular market rule ID"""
         self.logAnswer(current_fn_name(), vars())
 
@@ -762,19 +771,22 @@ class BrokerPlatform(EWrapper):
         del args["self"]
         self.request_manager.get(reqId).on_data(**args)
 
-    def historicalTicks(self, reqId: int, ticks: ListOfHistoricalTick, done: bool):
+    #def historicalTicks(self, reqId: int, ticks: ListOfHistoricalTick, done: bool):
+    def historicalTicks(self, reqId: int, ticks, done: bool):
         """returns historical tick data when whatToShow=MIDPOINT"""
         args = locals()
         del args["self"]
         self.request_manager.get(reqId).on_data(**args)
 
-    def historicalTicksBidAsk(self, reqId: int, ticks: ListOfHistoricalTickBidAsk, done: bool):
+    #def historicalTicksBidAsk(self, reqId: int, ticks: ListOfHistoricalTickBidAsk, done: bool):
+    def historicalTicksBidAsk(self, reqId: int, ticks, done: bool):
         """returns historical tick data when whatToShow=BID_ASK"""
         args = locals()
         del args["self"]
         self.request_manager.get(reqId).on_data(**args)
 
-    def historicalTicksLast(self, reqId: int, ticks: ListOfHistoricalTickLast, done: bool):
+    #def historicalTicksLast(self, reqId: int, ticks: ListOfHistoricalTickLast, done: bool):
+    def historicalTicksLast(self, reqId: int, ticks, done: bool):
         """returns historical tick data when whatToShow=TRADES"""
         args = locals()
         del args["self"]
