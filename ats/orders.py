@@ -59,3 +59,18 @@ def create_bracket_order(qty, profit_price, stop_loss_price):
     stop_loss_order.parentId = market_order.orderId
 
     return [market_order, profit_taker_order, stop_loss_order]
+
+class OrderManager(object):
+    def __init__(self):
+        self.orders = {}
+        self.next_valid_order_id = None
+
+
+    def on_order_status(*args):
+        pass
+
+    def on_open_order(*args):
+        pass
+
+    def on_open_order_end():
+        pass

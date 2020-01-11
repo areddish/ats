@@ -1,5 +1,5 @@
 import datetime
-from ibapi.contract import *
+from ibapi.contract import Contract
 
 # These symbols require an exchange to be set otherwise we get an error since there
 # are duplicates in the IB system. These are empirically found by getting an error
@@ -11,16 +11,20 @@ from ibapi.contract import *
 tickers_that_need_primary_exchange = {
     "MSFT": "NASDAQ",
     "CSCO": "NASDAQ",
-    "INTC": "NASDAQ"
+    "INTC": "NASDAQ",
+    "GLD": "ARCA"
 }
 
 
 class Stock(Contract):
-    def __init__(self, symbol):
+    def __init__(self, symbol, primaryExchange=None, currency="USD"):
         super().__init__()
         self.symbol = symbol
         self.secType = "STK"
         self.exchange = "SMART"
+        self.currency = currency
+        if primaryExchange != None:
+            self.primaryExchange = primaryExchange
         if symbol in tickers_that_need_primary_exchange:
             self.primaryExchange = tickers_that_need_primary_exchange[symbol]
 
@@ -41,10 +45,14 @@ class Option(Contract):
 
 
 class Future(Contract):
-    def __init__(self, symbol):
+    def __init__(self, symbol, exchange=""):
         super().__init__()
         self.symbol = symbol
         self.secType = "FUT"
+        self.currency = "USD"
+        self.lastTradeDateOrContractMonth = "201806"
+        self.primaryExchange = "GLOBEX"
+        self.exchange = exchange
 
 
 class Forex(Contract):

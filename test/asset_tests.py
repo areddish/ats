@@ -19,6 +19,5 @@ class TestAssets(unittest.TestCase):
         self.assertEqual(Future("ESH8").secType, "FUT")
         self.assertEqual(Forex("USD.JPY").secType, "CASH")
 
-
 if "__main__" == __name__:
     unittest.main()
