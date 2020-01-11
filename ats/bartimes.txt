@@ -1,0 +1,52 @@
+
+SECOND = 1
+MINUTE = 60 * SECOND
+HOUR = 60 * MINUTE
+DAY = 24 * HOUR
+BUSINESS_WEEK = 5 * DAY
+
+FIVE_SECONDS_PER_MINUTE = MINUTE // 5
+MINUTES_PER_HOUR = 60
+HOURS_PER_DAY = 24
+
+# wait for first 0 second
+# then start collecting 5s into 1m
+# then 1m into 1 hr
+# then 1 hr into 1 day
+# then 1 day into 1 week
+
+
+
+    def __init__(self):
+        self.count_five_seconds = 0
+        self.count_one_minute = 0
+        self.count_one_hour = 0
+        self.count_one_day = 0
+
+    def on_five_seconds(self):
+        self.count_five_seconds += 1
+        if (self.count_five_seconds == MINUTE // 5):
+            self.on_one_minute()            
+        pass
+
+    def on_one_minute(self):
+        if (self.count.count_one_minute == HOUR // 60):
+        pass
+    def on_one_hour(self):
+        pass
+    def on_one_day(self):
+        pass
+    def on_one_week(self):
+        pass
+
+
+
+
+
+
+
+
+## connection
+
+class Strategy:
+    

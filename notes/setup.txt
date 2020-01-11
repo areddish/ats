@@ -1,0 +1,5 @@
+in ats clone dir
+pip install -e . 
+in tws-api\source\pythonclient
+pip install -e
+

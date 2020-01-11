@@ -1,0 +1,35 @@
+TODO:
+
+1) Update imports in request so we don't have to individually import - follow azure-sdk example
+2) update ibapi so we don't have contractdetails.summary in my fork and then update the setconnoptions (also look into methods with multiple loganswer)
+    create pr back to ib?
+3) convert over to historicalrequests
+4) try bar requests (i.e a subscription)
+5) add way to deal with errors more gracefully - cancelling all the shit
+6) account impl
+7) logging
+8) implement order retreival and management
+9) Strategy -> on bar
+10) talib -> compute the Bb bandwdith/position
+11) request just a few bars of 5s for testing of something like SPX.
+12) lots of tests
+
+
+
+
+Longer term - write code to inspect API and figure out if names have changed
+        - have the request encode the args to the api? i.e. self.args = { "reqId": 2, "contract": self.contract } then brokerplatform could just do reqXXXX(**request.args)
+
+
+
+    ---------
+
+    stock app
+  - save contract info during data download
+ - emit the latest date and stop there
+ - use the error codes to stop?
+
+
+- create an app that goes through and makes sure we have data for all of the open days for the same symbols.
+
+

@@ -12,7 +12,7 @@ from ibapi.commission_report import CommissionReport
 from .assets import *
 from .orders import *
 from .barutils import *
-from ats.requests import Request, RequestManager, ContractDetailsRequest, HistoricalDataRequest
+from ats.requests import *
 from .account import AccountManager
 
 from threading import Thread, Event
@@ -28,6 +28,8 @@ bars = 0
 
 
 def to_ib_timestr(dt):
+    if not dt:
+        return ""
     return dt.strftime("%Y%m%d %H:%M:%S")
 
 
@@ -36,7 +38,7 @@ def to_duration(dt_start, dt_end):
 
 
 class BrokerPlatform(EWrapper):
-    def __init__(self, port, client_id):
+    def __init__(self, port, client_id, wait_for_account=True):
         self.client = EClient(wrapper=self)
         EWrapper.__init__(self)
 
@@ -49,10 +51,17 @@ class BrokerPlatform(EWrapper):
         self.account_manager = AccountManager()
 
         self.thread = None
+        self.connect_event = Event()
+        self.disconnect_event = Event()
+
+        self.wait_for_account = wait_for_account
 
     def error(self, reqId: int, errorCode: int, errorString: str):
-        if (reqId != -1):
-            self.request_manager.get(reqId).on_error(errorCode, errorString)
+        print(reqId, errorCode, errorString)
+        
+        # First give the request a chance to handle the error. If it returns True it handled it and 
+        # no further processing is required.
+        if (reqId != -1 and self.request_manager.get(reqId).on_error(errorCode, errorString)):
             return
 
         if (errorCode == 2104 or errorCode == 2106):
@@ -69,7 +78,6 @@ class BrokerPlatform(EWrapper):
         self.client.connect(host, self.port, self.client_id)
         self.thread = Thread(target=self.client.run)
         self.thread.start()
-        self.connect_event = Event()
         self.is_connected = self.connect_event.wait(2)
 
     def connectAck(self):
@@ -82,8 +90,10 @@ class BrokerPlatform(EWrapper):
         self.order_manager.next_valid_order_id = orderId
         # Now we are ready and really connected.
         self.connect_event.set()
-        # Start getting account updates
-        self.client.reqAccountUpdates(True, "")
+
+        if self.wait_for_account:
+            # Start getting account updates
+            self.client.reqAccountUpdates(True, "")
 
     def disconnect(self):
         self.client.reqAccountUpdates(False, self.account_manager.account_name)
@@ -92,7 +102,10 @@ class BrokerPlatform(EWrapper):
             self.client.disconnect()
         if (self.thread):
             self.thread.join()
+        self.disconnect_event.set()
 
+    def run(self):
+        self.disconnect_event.wait()
     # def tickPrice(self, reqId: int, tickType: int, price: float,
     #               attrib: TickAttrib):
     #     print(reqId, tickType, price, attrib)
@@ -130,14 +143,31 @@ class BrokerPlatform(EWrapper):
         request_type = type(request)
         if (request_type == HistoricalDataRequest):
             self.client.reqHistoricalData(request.request_id, request.contract, to_ib_timestr(
-                request.end), request.duration, request.bar_size, "TRADES", 1, 2, False, [])
-        elif (request_type == ContractDetailsRequest):
+                request.end), request.duration, request.bar_size, "TRADES", 0, 2, False, [])
+        elif (request_type == ContractDetailsRequest or request_type == OptionChainRequest):
             self.client.reqContractDetails(
                 request.request_id, request.contract)
+        elif (request_type == RealTimeBarSubscription):
+            self.client.reqRealTimeBars(request.request_id, request.contract, 5, "TRADES", 1, [])
+        elif (request_type == RealTimeMarketSubscription):
+            self.client.reqMktData(request.request_id, request.contract, "", False, False, [])
+        elif (request_type == DividendDetailsRequest):
+            self.client.reqMktData(request.request_id, request.contract, "456", False, False, [])
 
         # If synchrononous wait on it.
         if (request.is_synchronous):
             request.event.wait()
+
+    def cancel_request(self, request: Request):
+        # Process it based on type, making appropriate calls into the client.
+        request_type = type(request)
+
+        if (request_type == RealTimeBarSubscription):
+            self.client.cancelRealTimeBars(request.request_id)
+        elif (request_type == DividendDetailsRequest):
+            self.client.cancelMktData(request.request_id)
+
+        self.request_manager.mark_finished(request.request_id)
 
     def historicalData(self, reqId, bar):
         args = locals()
@@ -150,37 +180,11 @@ class BrokerPlatform(EWrapper):
         del args["reqId"]
         self.request_manager.mark_finished(reqId, **args)
 
-    def reqRealTimeBars(self, reqId, contract, barSize: int,
-                        whatToShow: str, useRTH: bool,
-                        realTimeBarsOptions):
-        self.bar_series_builder[reqId] = barutils.BarAggregator(
-            contract, self.data_dir)
-        super().reqRealTimeBars(reqId, contract, barSize,
-                                whatToShow, useRTH, realTimeBarsOptions)
-
-    def realtimeBar(self, reqId: int, timeStamp: int, open: float, high: float,
-                    low: float, close: float, volume: int, wap: float,
-                    count: int):
-        global bars
-        bars += 1
-        super().realtimeBar(reqId, timeStamp, open, high, low, close, volume, wap, count)
-
-        b = BarData()
-        b.open = open
-        b.high = high
-        b.time = timeStamp
-        b.low = low
-        b.close = close
-        b.volume = volume
-        b.average = wap
-        b.barCount = count
-
-        self.bar_series_builder[reqId].add_bar(b)
-        local_time = time.localtime(timeStamp)
-        pretty_print_time = time.strftime('%Y-%m-%d %H:%M:%S', local_time)
-        print(reqId, pretty_print_time, high, low, open, close,
-              volume, count)
-        pass
+    # def reqRealTimeBars(self, reqId, contract, barSize: int,
+    #                     whatToShow: str, useRTH: bool,
+    #                     realTimeBarsOptions):
+    #     self.bar_series_builder[reqId] = barutils.BarAggregator(
+    #         contract, self.data_dir)
 
     def marketDataType(self, reqId: TickerId, marketDataType: int):
         """TWS sends a marketDataType(type) callback to the API, where
@@ -387,9 +391,10 @@ class BrokerPlatform(EWrapper):
             available for trading 3 - Exchange is available for trading
         message - the message
         origExchange -    the exchange where the message comes from.  """
-        args = locals()
-        del args["self"]
-        self.request_manager.get(reqId).on_data(**args)
+        # args = locals()
+        # del args["self"]
+        # self.request_manager.get(reqId).on_data(**args)
+        raise NotImplementedError
 
     def managedAccounts(self, accountsList: str):
         """Receives a comma-separated string with the managed account ids."""
@@ -479,6 +484,19 @@ class BrokerPlatform(EWrapper):
             for TRADES)."""
         args = locals()
         del args["self"]
+        print("onbar")
+        #global bars
+        b = BarData()
+        # TODO: This isn't on a BarData, that's a historical thing.
+        b.time = time
+        b.open = open
+        b.high = high
+        b.low = low
+        b.close = close
+        b.volume = volume
+        b.average = wap
+        b.barCount = count
+        args["bar"] = b
         self.request_manager.get(reqId).on_data(**args)
 
     def currentTime(self, time: int):
@@ -736,7 +754,8 @@ class BrokerPlatform(EWrapper):
         del args["self"]
         self.request_manager.get(reqId).on_data(**args)
 
-    def marketRule(self, marketRuleId: int, priceIncrements: ListOfPriceIncrements):
+    #def marketRule(self, marketRuleId: int, priceIncrements: ListOfPriceIncrements):
+    def marketRule(self, marketRuleId: int, priceIncrements):
         """returns minimum price increment structure for a particular market rule ID"""
         self.logAnswer(current_fn_name(), vars())
 
@@ -752,19 +771,22 @@ class BrokerPlatform(EWrapper):
         del args["self"]
         self.request_manager.get(reqId).on_data(**args)
 
-    def historicalTicks(self, reqId: int, ticks: ListOfHistoricalTick, done: bool):
+    #def historicalTicks(self, reqId: int, ticks: ListOfHistoricalTick, done: bool):
+    def historicalTicks(self, reqId: int, ticks, done: bool):
         """returns historical tick data when whatToShow=MIDPOINT"""
         args = locals()
         del args["self"]
         self.request_manager.get(reqId).on_data(**args)
 
-    def historicalTicksBidAsk(self, reqId: int, ticks: ListOfHistoricalTickBidAsk, done: bool):
+    #def historicalTicksBidAsk(self, reqId: int, ticks: ListOfHistoricalTickBidAsk, done: bool):
+    def historicalTicksBidAsk(self, reqId: int, ticks, done: bool):
         """returns historical tick data when whatToShow=BID_ASK"""
         args = locals()
         del args["self"]
         self.request_manager.get(reqId).on_data(**args)
 
-    def historicalTicksLast(self, reqId: int, ticks: ListOfHistoricalTickLast, done: bool):
+    #def historicalTicksLast(self, reqId: int, ticks: ListOfHistoricalTickLast, done: bool):
+    def historicalTicksLast(self, reqId: int, ticks, done: bool):
         """returns historical tick data when whatToShow=TRADES"""
         args = locals()
         del args["self"]

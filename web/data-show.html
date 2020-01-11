@@ -1,0 +1,35 @@
+<html>
+    <style>
+        .grid {
+            display: flex;        
+        }
+    </style>
+    <body>
+        <div id="root" class="grid"></div>
+        <script>
+            const colors = [ "blue", "grey", "grey", "grey", "grey", "grey", "blue"];
+            let root = document.getElementById("root");
+            
+            const start = Date.now();
+
+            root.innerText = start;
+            
+            for(let y = 0; y < 100; y++)
+            {
+                const row = document.createElement("div");
+                row.style.display = "block";
+                for(let day = 0; day < 7; day++)
+                {
+                    const elm = document.createElement("div")
+                    elm.style.backgroundColor = colors[day];
+                    elm.style.width = "20px";
+                    elm.style.height = "20px";
+                    elm.style.margin = "2px";
+                
+                    row.appendChild(elm);
+                }
+                root.appendChild(row);
+            }
+        </script>
+    </body>
+</html>

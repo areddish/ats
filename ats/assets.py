@@ -25,7 +25,7 @@ class Stock(Contract):
         self.currency = currency
         if primaryExchange != None:
             self.primaryExchange = primaryExchange
-        if symbol in tickers_that_need_primary_exchange:
+        elif symbol in tickers_that_need_primary_exchange:
             self.primaryExchange = tickers_that_need_primary_exchange[symbol]
 
 
@@ -42,14 +42,16 @@ class Option(Contract):
         super().__init__()
         self.symbol = underlying
         self.secType = "OPT"
-
-
+        self.LastTradeDateOrContractMonth = expiry
+        self.currency = "USD"
+        
 class Future(Contract):
     def __init__(self, symbol, exchange=""):
         super().__init__()
         self.symbol = symbol
         self.secType = "FUT"
         self.currency = "USD"
+        # TODO: (areddish) Should this default to current month? Next month?
         self.lastTradeDateOrContractMonth = "201806"
         self.primaryExchange = "GLOBEX"
         self.exchange = exchange

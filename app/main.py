@@ -3,8 +3,9 @@ import argparse
 import time
 
 from ats.ats import BrokerPlatform
-from ats.assets import Stock
-from ats.requests import ContractDetailsRequest
+from ats.barmanager import BarManager
+from ats.assets import Stock, Future
+from ats.requests import *
 
 if "__main__" == __name__:
     print("Starting up...")
@@ -40,26 +41,30 @@ if "__main__" == __name__:
             details_req = ContractDetailsRequest(Stock(sym))
             trader.handle_request(details_req)
 
-        #trader.reqMktData(12, Stock("SPY"), "", False, False, [])
+        print ("Subscribing.... ")
+        bar_man = BarManager(trader)
 
-        # print("requesting bars")
-        # trader.reqRealTimeBars(1, SP500, 5, "TRADES", True, [])
-        # trader.reqRealTimeBars(2, Stock("SPY"), 5, "TRADES", True, [])
-        # trader.reqRealTimeBars(3, Stock("TNA"), 5, "TRADES", True, [])
-        # #trader.reqRealTimeBars(23, Stock("MSFT"), 5, "BID", True, [])
-        # #trader.reqRealTimeBars(24, Stock("AAPL"), 5, "TRADES", True, [])
-        #trader.reqRealTimeBars(25, Future("ES"), 5, "TRADES", True, [])
+        esdec21 = Future("ES")
+        esdec21.lastTradeDateOrContractMonth = "201812"
+        bar_man.subscribe(esdec21)
 
-        # sym = "a"
-        # while (sym != "" and trader.isConnected()):
-        time.sleep(25)
+        mkt_sub = RealTimeMarketSubscription(Stock("SPY"))
+        trader.handle_request(mkt_sub)
+
+# how to manage session?
+# how to get backfill data?
+# how to connect barman, strategy, indicators, and broker?
+
+        amzn_strategy = BollingBandPercentStrategy(Stock("AMZN"), bar_man)
+
+        trader.run()
+        
+        print ("Unsubscribing...")
+        bar_man.unsubscribe(esdec21)
+        trader.cancel_request(mkt_sub)
     except KeyboardInterrupt:
         print("Interrupt! Closing...")
-    #     print ("Enter symbol")
-    #     sym = input()
-    #     trader.find_contract(sym)
-
-    print("Sending Disconnect. ")
-    print("Waiting for disconnect...")
-    trader.disconnect()
+        print("Sending Disconnect. ")
+        print("Waiting for disconnect...")
+        trader.disconnect()
     print("Goodbye")
