@@ -17,14 +17,14 @@ class RequestManager():
         self.freed_single_use_ids = []
         self.requests = {}
 
-    def add(self, request: Request):        
+    def add(self, request: Request):
         id = self.__get_next_free_id(request.request_type, request.is_synchronous)
         request.request_id = id
         self.requests[id] = request
         print(self.__class__,"Adding request:", id, type(request))
 
     def get(self, request_id):
-        print (self.__class__,"Getting:", request_id, request_id in self.requests)
+        #print (self.__class__,"Getting:", request_id, request_id in self.requests)
         return self.requests[request_id]
 
     # def remove(self, request: Request):
@@ -40,7 +40,7 @@ class RequestManager():
     #     return id, e
 
     def mark_finished(self, reqId, **kwargs):
-        request = self.requests[reqId]        
+        request = self.requests[reqId]
         request.complete(**kwargs)
         #del self.requests[reqId]
         self.__free_request(reqId)
@@ -66,9 +66,11 @@ class RequestManager():
 
     def __free_request(self, id):
         # check if even is in weird state
-        if id <= 2000:
+        if id >= 2000:
+            print(f"freeing single... {id}")
             self.freed_single_use_ids.append(id)
         else:
+            print(f"freeing request... {id}")
             self.freed_request_ids.append(id)
 
 # class RequestSynchronizer:

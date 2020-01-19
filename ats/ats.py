@@ -156,7 +156,9 @@ class BrokerPlatform(EWrapper):
 
         # If synchrononous wait on it.
         if (request.is_synchronous):
-            request.event.wait()
+            request.event.wait(10)
+            if not request.event.is_set():
+                request.timeout()
 
     def cancel_request(self, request: Request):
         # Process it based on type, making appropriate calls into the client.

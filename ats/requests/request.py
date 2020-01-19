@@ -15,6 +15,10 @@ class Request(object):
         if (self.is_synchronous):
             self.event.set()
 
+    def timeout(self):
+        print(f"{self.request_id} is timing out....")
+        self.complete()
+
     def on_error(self, error_code, errorString):
         # We didn't handle it, outer error handler should process.
         return False 
