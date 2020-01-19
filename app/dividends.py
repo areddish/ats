@@ -71,8 +71,8 @@ if "__main__" == __name__:
             exit(-1)
 
         data = []
-        for ticker in dividend_tickers[:5]:
-            print(f"Getting data for {ticker['symbol']}...")
+        for ticker in dividend_tickers:
+            print(f"{datetime.datetime.now().strftime('%H:%M:%S.%MS')}: Getting data for {ticker['symbol']}...")
             request = DividendDetailsRequest(Stock(ticker['symbol']))
             trader.handle_request(request)
             #print (request.result)
@@ -80,7 +80,7 @@ if "__main__" == __name__:
             df = DataFrame(data, columns=["Symbol","Date","Payout"])
             df.to_csv("dividend_pays.csv")
             trader.cancel_request(request)
-
+            print(f"{datetime.datetime.now().strftime('%H:%M:%S.%MS')}: {ticker['symbol']} done!")
         
 #         for sym in ["AAPL", "TNA", "MSFT", "SPY", "TSLA", "BAC", "AMZN"]:
 #             details_req = ContractDetailsRequest(Stock(sym))
@@ -101,9 +101,6 @@ if "__main__" == __name__:
 # # how to connect barman, strategy, indicators, and broker?
 
 #         amzn_strategy = BollingBandPercentStrategy(Stock("AMZN"), bar_man)
-
-        trader.run()
-        
 #         print ("Unsubscribing...")
 #         bar_man.unsubscribe(esdec21)
 #         trader.cancel_request(mkt_sub)
@@ -111,5 +108,6 @@ if "__main__" == __name__:
         print("Interrupt! Closing...")
         print("Sending Disconnect. ")
         print("Waiting for disconnect...")
-        trader.disconnect()
+
+    trader.disconnect()
     print("Goodbye")
