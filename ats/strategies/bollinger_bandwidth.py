@@ -1,10 +1,79 @@
-from ats.orders import create_bracket_order
+from ats.strategies.strategy import Strategy
+from ats.barmanager import BarManager
+from ats.bollingerbands import bbands_last, bbands_percent
+from enum import Enum
 
-class BollingerBandwithStrategy(Strategy):
-    def __init__(self, contract, allocation, bottom_threshold=0.2, top_threshold=0.7):
-        super().__init__(allocation)
+class Indicators(Enum):
+    BollingerBands = 1
 
+class Indicator():
+    def __init__(self, owner, contract, type):
+        self.owner = owner
         self.contract = contract
+        self.type = type
+
+    def on_bar(self, current_bar, all_bars):
+        self.owner.on_bar(current_bar)
+
+class BollingerBandIndicator(Indicator):
+    def __init__(self, owner, contract, period, n_std_dev=2):
+        super().__init__(owner, contract, Indicators.BollingerBands)
+        self.period = period
+        self.num_std_dev = n_std_dev
+
+    def on_bar(self, current_bar, all_bars):
+        print("BollingerBandIndicator: got bar... ",end="")
+        # need to have a minimum of period bars
+        if len(all_bars) < self.period:
+            print(f"Not enough data {len(all_bars)}/{self.period}, skipping")
+            return
+
+        data = [bar.close for bar in all_bars]
+        upper, middle, lower = bbands_last(data, window_size=self.period, num_std_dev=self.num_std_dev)
+        percent = bbands_percent(upper, lower, current_bar.close)
+
+        augmented_bar = vars(current_bar)
+        augmented_bar["indicators"] = {
+                self.type: {
+                    self.period: {
+                        "upper": upper,
+                        "middle": middle,
+                        "lower": lower,
+                        "percent": percent
+                    }
+                }
+            }
+        print(f"Computed: {upper} {middle} {lower} {percent}. Calling strategy")
+        super().on_bar(augmented_bar, all_bars)
+
+def create_indicator(strategy, contract, indicator_data):
+    if indicator_data["type"] == Indicators.BollingerBands:
+        return BollingerBandIndicator(strategy, contract, indicator_data["period"], 2)
+
+class InidicatorStrategy(Strategy):
+    def __init__(self, contract, allocation):
+        super().__init__(allocation)
+        self.contract = contract
+        self.bar_manager = None
+        self.indicator = None
+        self.registered = False
+
+    def register(self, trader):
+        assert not self.bar_manager
+        self.bar_manager = BarManager(trader)
+
+        if self.indicator and not self.registered:
+            self.bar_manager.subscribe(self.indicator.contract, callback=self.indicator.on_bar)
+            self.registered = True
+
+    def unregister(self, trader):
+        if self.registered:
+            self.bar_manager.unsubscribe(self.indicator.contract)
+
+class BollingerBandwithStrategy(InidicatorStrategy):
+    def __init__(self, contract, allocation, bottom_threshold=0.2, top_threshold=0.7):
+        super().__init__(contract, allocation)
+
         self.has_dipped = False
         self.bottom_threshold = bottom_threshold
         self.top_threshold = top_threshold
@@ -13,6 +82,8 @@ class BollingerBandwithStrategy(Strategy):
         self.order_placed = False
         # needed?
         self.indicator_name = "BBANDWIDTH_24"
+        # 24 minute bollinger bands
+        self.indicator = create_indicator(self, self.contract, { "type": Indicators.BollingerBands, "period": 24 })
 
     def check_buy_condition(self, augmented_bar):
         """
@@ -23,12 +94,11 @@ class BollingerBandwithStrategy(Strategy):
 
         """
         # Check if we have dipped below
-        self.has_dipped = self.has_dipped or augmented_bar.inidcators[indicator_name] < self.bottom_threshold 
+        bband_percent = augmented_bar["indicators"][Indicators.BollingerBands][24]["percent"]
+        self.has_dipped = self.has_dipped or bband_percent < self.bottom_threshold 
 
         # We want to buy when, after having dipped, we cross back above the threshold
-        return not self.order_placed and
-               self.has_dipped and 
-               augmented_bar.inidcators[indicator_name] >= self.bottom_threshold:
+        return not self.order_placed and self.has_dipped and bband_percent >= self.bottom_threshold
 
     def check_sell_condition(self, augmented_bar):
         """
@@ -37,7 +107,7 @@ class BollingerBandwithStrategy(Strategy):
             TODO: In the future we want to eliminate this check and allow the order to 
             float up.
         """
-        return augmented_bar.inidcators[indicator_name] >= self.top_threshold
+        return augmented_bar["indicators"][Indicators.BollingerBands][24]["percent"] >= self.top_threshold
 
     def on_tick(self, tick):
         """
@@ -87,10 +157,16 @@ class BollingerBandwithStrategy(Strategy):
             3. That stop isn't huge, consider a minimum $, % or other check along with computing it
         """
 
-        self.order = create_bracket_order(self.qty_desired, profit, stop)
-        # TODO: place order
+        # TODO: this should compute based on self.allocation / price + fees
+        self.qty_desired = 1
+
+        market, profit, stop = self.order_manager.create_bracket_order(self.qty_desired, profit, stop)
+        self.order_manager.place_order(stop)
+        self.order_manager.place_order(profit)
+        self.order_manager.place_order(market)
         self.order_placed = true
 
     def close_position(self, augmented_bar):
         # TODO: Right now we are using bracket orders to close. So this isn't
         # needed to do anything.
+        pass

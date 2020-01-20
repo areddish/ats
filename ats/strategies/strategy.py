@@ -16,19 +16,21 @@ class Strategy:
         # This position is only held for the day, we should close if no trigger by end of day.
         self.day_position = True
 
+        self.order_manager = None
+
     def on_tick(self, tick):
         pass
 
     def on_bar(self, augmented_bar):
-        # Compute indicators
-        augmented_bar = self.compute_indicators(augmented_bar)
-
         # Make buy / sell decision
+        print(f"Stratgey has position: {self.position}")
         if (self.position):
-            if self.check_sell_condition(bar):
+            if self.check_sell_condition(augmented_bar):
+                print(f"Stratgey has sell signal! SELL")
                 self.open_position(augmented_bar)
         else:
-            if self.check_buy_condition(bar):
+            if self.check_buy_condition(augmented_bar):
+                print(f"Stratgey has buy signal! BUY")
                 self.close_position(augmented_bar)
 
     def on_fill(self, qty):
@@ -62,7 +64,8 @@ class Strategy:
         raise NotImplementedError()
 
     def run(self, trader):
-        self.register()
+        self.register(trader)
+        self.order_manager = trader.order_manager
         """
         TODO:
             Need a way to unregister before disconnect?
