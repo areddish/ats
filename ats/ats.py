@@ -47,7 +47,7 @@ class BrokerPlatform(EWrapper):
         self.is_connected = False
 
         self.request_manager = RequestManager()
-        self.order_manager = OrderManager()
+        self.order_manager = OrderManager(self)
         self.account_manager = AccountManager()
 
         self.thread = None
@@ -57,18 +57,22 @@ class BrokerPlatform(EWrapper):
         self.wait_for_account = wait_for_account
 
     def error(self, reqId: int, errorCode: int, errorString: str):
-        print(reqId, errorCode, errorString)
-        
-        # First give the request a chance to handle the error. If it returns True it handled it and 
-        # no further processing is required.
-        if (reqId != -1 and self.request_manager.get(reqId).on_error(errorCode, errorString)):
-            return
+        try:
+            print(reqId, errorCode, errorString)
+            
+            # First give the request a chance to handle the error. If it returns True it handled it and 
+            # no further processing is required.
+            if (reqId != -1 and self.request_manager.get(reqId).on_error(errorCode, errorString)):
+                return
 
-        if (errorCode == 2104 or errorCode == 2106):
-            print(errorString)
-        else:
-            super().error(reqId, errorCode, errorString)
-            print(errorCode, errorString)
+            if (errorCode == 2104 or errorCode == 2106):
+                print(errorString)
+            else:
+                super().error(reqId, errorCode, errorString)
+                print(errorCode, errorString)
+        except:
+            print ("Prolbem while handling error...")
+            self.disconnect()
 
     def winError(self, text: str, lastError: int):
         super().winError(text, lastError)
@@ -76,12 +80,15 @@ class BrokerPlatform(EWrapper):
 
     def connect(self, host="127.0.0.1"):
         self.client.connect(host, self.port, self.client_id)
-        self.thread = Thread(target=self.client.run)
+        self.thread = Thread(target=self.client.run, name="ATS Thread")
         self.thread.start()
         self.is_connected = self.connect_event.wait(2)
+        if not self.is_connected:
+            print(f"is_connected = {self.is_connected}")
+            self.disconnect_event.set()
 
     def connectAck(self):
-        print("Connected!")
+        print("Connection acknowledged.")
 
     # Until we get this notification we aren't really ready to run
     # the rest of the system live. At least we cannot place orders.
@@ -100,9 +107,13 @@ class BrokerPlatform(EWrapper):
         if (self.is_connected):
             self.is_connected = False
             self.client.disconnect()
+        self.disconnect_event.set()
         if (self.thread):
             self.thread.join()
-        self.disconnect_event.set()
+
+    def keyboardInterrupt(self):
+        print("Keyboard interrupt...")
+        self.disconnect()
 
     def run(self):
         self.disconnect_event.wait()
@@ -136,29 +147,33 @@ class BrokerPlatform(EWrapper):
     #     self.request_event.wait()
 
     def handle_request(self, request: Request):
-        # Assign a request id
-        self.request_manager.add(request)
+        try:
+            # Assign a request id
+            self.request_manager.add(request)
 
-        # Process it based on type, making appropriate calls into the client.
-        request_type = type(request)
-        if (request_type == HistoricalDataRequest):
-            self.client.reqHistoricalData(request.request_id, request.contract, to_ib_timestr(
-                request.end), request.duration, request.bar_size, "TRADES", 0, 2, False, [])
-        elif (request_type == ContractDetailsRequest or request_type == OptionChainRequest):
-            self.client.reqContractDetails(
-                request.request_id, request.contract)
-        elif (request_type == RealTimeBarSubscription):
-            self.client.reqRealTimeBars(request.request_id, request.contract, 5, "TRADES", 1, [])
-        elif (request_type == RealTimeMarketSubscription):
-            self.client.reqMktData(request.request_id, request.contract, "", False, False, [])
-        elif (request_type == DividendDetailsRequest):
-            self.client.reqMktData(request.request_id, request.contract, "456", False, False, [])
+            # Process it based on type, making appropriate calls into the client.
+            request_type = type(request)
+            if (request_type == HistoricalDataRequest):
+                self.client.reqHistoricalData(request.request_id, request.contract, to_ib_timestr(
+                    request.end), request.duration, request.bar_size, "TRADES", 0, 2, False, [])
+            elif (request_type == ContractDetailsRequest or request_type == OptionChainRequest):
+                self.client.reqContractDetails(
+                    request.request_id, request.contract)
+            elif (request_type == RealTimeBarSubscription):
+                self.client.reqRealTimeBars(request.request_id, request.contract, 5, "TRADES", 0, [])
+            elif (request_type == RealTimeMarketSubscription):
+                self.client.reqMktData(request.request_id, request.contract, "", False, False, [])
+            elif (request_type == DividendDetailsRequest):
+                self.client.reqMktData(request.request_id, request.contract, "456", False, False, [])
 
-        # If synchrononous wait on it.
-        if (request.is_synchronous):
-            request.event.wait(10)
-            if not request.event.is_set():
-                request.timeout()
+            # If synchrononous wait on it.
+            if (request.is_synchronous):
+                request.event.wait(10)
+                if not request.event.is_set():
+                    request.timeout()
+        except:
+            print("problem!")
+            self.disconnect()
 
     def cancel_request(self, request: Request):
         # Process it based on type, making appropriate calls into the client.
@@ -484,7 +499,7 @@ class BrokerPlatform(EWrapper):
         bar.WAP   - the bar's Weighted Average Price
         bar.count - the number of trades during the bar's timespan (only available
             for TRADES)."""
-        args = locals()
+        args = dict(locals())
         del args["self"]
         print("onbar")
         #global bars

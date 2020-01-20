@@ -19,4 +19,8 @@ class RealTimeBarSubscription(Request):
     def on_error(self, error_code, errorString):
         # We didn't handle it, outer error handler should process.
         print (self.__class__.__name__, f"ERROR: {error_code}: {errorString}")
+        if error_code == 200:
+            print (f"Invalid contract specification for {self.contract.symbol} to get bars.")
+            return True
+
         return False

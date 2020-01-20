@@ -18,16 +18,18 @@ class BarManager(object):
         # print(reqId, pretty_print_time, high, low, open, close,
         #       volume, count)
 
-    def subscribe(self, contract, duration="1 min"):
-        self.aggregators[contract.symbol] = BarAggregator(contract, "c:\\temp")
+    def subscribe(self, contract, duration="1 min", callback=None):
+        self.aggregators[contract.symbol] = BarAggregator(contract, "c:\\temp", callback=callback)
 
         request = RealTimeBarSubscription(contract, self)
-        self.subscriptionRequests = request
+
+        assert contract.symbol not in self.subscriptionRequests
+        self.subscriptionRequests[contract.symbol] = request
+
         self.broker.handle_request(request)
 
-    def unsubscribe(self, contract, duration="1 min"):
+    def unsubscribe(self, contract):
         # Remove/Flush self.aggregators[contract.symbol]
 
         request = self.subscriptionRequests[contract.symbol]
         self.broker.cancel_request(request)
-        

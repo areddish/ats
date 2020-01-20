@@ -39,9 +39,10 @@ class BarAggregator(EventGenerator):
                 if len(self.bars) + 1< self.timeSpanInSeconds // 5:
                     print ("Need bars before:",bar_time)
                 self.store_bar(bar, False)
-                self.bars.append(bar)
+                # this is being done in store_Bar.. why?
+                # self.bars.append(bar)
                 if (self.callback):
-                    self.callback(bar)
+                    self.callback(bar, self.bars)
 
         elif bar_time.second == 0:
             # start this bar
