@@ -142,8 +142,8 @@ class BollingerBandwithStrategy(InidicatorStrategy):
             self.close_position()
 
     def open_position(self, augmented_bar):
-        top_of_band = 0 # TODO:
-        bottom_of_band = 0 # TODO:
+        top_of_band = augmented_bar["indicators"][Indicators.BollingerBands][24]["upper"]
+        bottom_of_band = augmented_bar["indicators"][Indicators.BollingerBands][24]["lower"]
 
         # Take profit at the upper threshold
         profit = ((top_of_band - bottom_of_band) * self.top_threshold) + bottom_of_band
@@ -160,11 +160,11 @@ class BollingerBandwithStrategy(InidicatorStrategy):
         # TODO: this should compute based on self.allocation / price + fees
         self.qty_desired = 1
 
-        market, profit, stop = self.order_manager.create_bracket_order(self.qty_desired, profit, stop)
+        market, profit, stop = self.order_manager.create_bracket_order(self.contract, self.qty_desired, profit, stop)
         self.order_manager.place_order(stop)
         self.order_manager.place_order(profit)
         self.order_manager.place_order(market)
-        self.order_placed = true
+        self.order_placed = True
 
     def close_position(self, augmented_bar):
         # TODO: Right now we are using bracket orders to close. So this isn't
