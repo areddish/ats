@@ -36,9 +36,13 @@ def to_ib_timestr(dt):
 def to_duration(dt_start, dt_end):
     return f"{(dt_end - dt_start).seconds} S"
 
+class BrokerPlatformConfig:
+    wait_for_account = True
+    client_id = 1000
+    port = 9476
 
 class BrokerPlatform(EWrapper):
-    def __init__(self, port, client_id, wait_for_account=True):
+    def __init__(self, port, client_id, wait_for_account=True,bar_manager=None):
         self.client = EClient(wrapper=self)
         EWrapper.__init__(self)
 
@@ -56,10 +60,26 @@ class BrokerPlatform(EWrapper):
 
         self.wait_for_account = wait_for_account
 
+        self.accounts = []
+
+        self.bar_manager = bar_manager
+        self.bar_manager.connect_broker(self)
+
     def error(self, reqId: int, errorCode: int, errorString: str):
         try:
             print(reqId, errorCode, errorString)
-            
+
+            # order error
+            if errorCode == 321:
+                print ("API in ReadOnly mode...")
+                self.disconnect()
+                return
+
+            # Give order manager priority in dealing with errors
+            # TODO: Need to make sure order reqId and other reqId's don't overlap!
+            if reqId != -1 and self.order_manager.on_error(reqId, errorCode, errorString):
+                return
+
             # First give the request a chance to handle the error. If it returns True it handled it and 
             # no further processing is required.
             if (reqId != -1 and self.request_manager.get(reqId).on_error(errorCode, errorString)):
@@ -71,7 +91,7 @@ class BrokerPlatform(EWrapper):
                 super().error(reqId, errorCode, errorString)
                 print(errorCode, errorString)
         except:
-            print ("Prolbem while handling error...")
+            print ("Problem while handling error...")
             self.disconnect()
 
     def winError(self, text: str, lastError: int):
@@ -100,10 +120,12 @@ class BrokerPlatform(EWrapper):
 
         if self.wait_for_account:
             # Start getting account updates
-            self.client.reqAccountUpdates(True, "")
+            for account_name in self.account_manager.accounts:
+                self.client.reqAccountUpdates(True, account_name)
 
     def disconnect(self):
-        self.client.reqAccountUpdates(False, self.account_manager.account_name)
+        for account_name in self.account_manager.accounts:
+            self.client.reqAccountUpdates(False, self.account_manager.accounts[account_name])
         if (self.is_connected):
             self.is_connected = False
             self.client.disconnect()
@@ -192,16 +214,11 @@ class BrokerPlatform(EWrapper):
 
         self.request_manager.mark_finished(request.request_id)
 
-    def historicalData(self, reqId, bar):
-        args = locals()
-        del args["self"]
-        self.request_manager.get(reqId).on_data(**args)
+    def place_order(self, order):
+        self.client.placeOrder(order.orderId, order.contract, order)
 
-    def historicalDataEnd(self, reqId: int, start: str, end: str):
-        args = locals()
-        del args["self"]
-        del args["reqId"]
-        self.request_manager.mark_finished(reqId, **args)
+    def cancel_order(self, order):
+        self.client.cancelOrder(order.orderId)
 
     # def reqRealTimeBars(self, reqId, contract, barSize: int,
     #                     whatToShow: str, useRTH: bool,
@@ -286,7 +303,10 @@ class BrokerPlatform(EWrapper):
         whyHeld:str - This field is used to identify an order held when TWS is trying to locate shares for a short sell. The value used to indicate this is 'locate'.
 
         """
-        self.order_manager.on_order_status(locals())
+        self.order_manager.on_order_status(orderId, status, filled,
+                    remaining, avgFillPrice, permId,
+                    parentId, lastFillPrice, clientId,
+                    whyHeld, mktCapPrice)
 
     def openOrder(self, orderId: OrderId, contract: Contract, order: Order,
                   orderState: OrderState):
@@ -359,9 +379,13 @@ class BrokerPlatform(EWrapper):
     def execDetails(self, reqId: int, contract: Contract, execution: Execution):
         """This event is fired when the reqExecutions() functions is
         invoked, or when an order is filled.  """
-        args = locals()
-        del args["self"]
-        self.request_manager.get(reqId).on_data(**args)
+        if reqId == -1:
+            self.order_manager.on_exec_details(reqId, contract, execution)
+        else:
+            args = locals()
+            del args["self"]
+            del args["reqId"]
+            self.request_manager.get(reqId).on_data(**args)
 
     def execDetailsEnd(self, reqId: int):
         """This function is called once all executions have been sent to
@@ -422,6 +446,8 @@ class BrokerPlatform(EWrapper):
     def managedAccounts(self, accountsList: str):
         """Receives a comma-separated string with the managed account ids."""
         self.logAnswer(current_fn_name(), vars())
+        for account_name in list(filter(lambda x: x, accountsList.split(","))):
+                self.account_manager.add_account(account_name)
 
     def receiveFA(self, faData: FaDataType, cxml: str):
         """ receives the Financial Advisor's configuration available in the TWS
@@ -556,7 +582,8 @@ class BrokerPlatform(EWrapper):
         - immediately after a trade execution
         - by calling reqExecutions()."""
 
-        self.logAnswer(current_fn_name(), vars())
+        if not self.order_manager.on_commision_report(commissionReport):
+            self.logAnswer(current_fn_name(), vars())
 
     def position(self, account: str, contract: Contract, position: float,
                  avgCost: float):

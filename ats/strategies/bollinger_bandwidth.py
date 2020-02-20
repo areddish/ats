@@ -1,6 +1,7 @@
 from ats.strategies.strategy import Strategy
-from ats.barmanager import BarManager
+from ats.barmanager import BarManager, BarDb
 from ats.bollingerbands import bbands_last, bbands_percent
+from ats.util.util import get_user_file
 from enum import Enum
 
 class Indicators(Enum):
@@ -60,7 +61,8 @@ class InidicatorStrategy(Strategy):
 
     def register(self, trader):
         assert not self.bar_manager
-        self.bar_manager = BarManager(trader)
+        # TODO: fix this bar db
+        self.bar_manager = BarManager(trader, BarDb(get_user_file(trader.APP_NAME, f"{self.contract.symbol}-{self.contract.lastTradeDateOrContractMonth}.db")))
 
         if self.indicator and not self.registered:
             self.bar_manager.subscribe(self.indicator.contract, callback=self.indicator.on_bar)
