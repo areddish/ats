@@ -17,35 +17,6 @@ from ats.requests import HistoricalDataRequest, ContractDetailsRequest
 
 DELTA_OFFSET = ((datetime.datetime.now(datetime.timezone.utc).astimezone().utcoffset().seconds / 3600) - 19.0) * 60 * 60
 
-
-def is_weekday(dt):
-    return dt.weekday() < 5
-
-
-def is_before_open(dt):
-    open_dt = datetime.datetime(
-        dt.year, dt.month, dt.day, 9, 30, 0) + datetime.timedelta(seconds=DELTA_OFFSET)
-    return dt < open_dt
-
-
-def previous_end_of_day(dt):
-    return datetime.datetime(dt.year, dt.month, dt.day, 16, 0, 0) - datetime.timedelta(days=1) + datetime.timedelta(seconds=DELTA_OFFSET)
-
-
-def skip_back_to_next_weekday(dt):
-    while (not is_weekday(dt)):
-        dt = dt - datetime.timedelta(days=1)
-    return dt
-
-
-def to_ib_timestr(dt):
-    return dt.strftime("%Y%m%d %H:%M:%S")
-
-
-def to_duration(dt_start, dt_end):
-    return f"{(dt_end - dt_start).seconds} S"
-
-
 if "__main__" == __name__:
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("-p", "--port", action="store", type=int,
