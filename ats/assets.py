@@ -19,14 +19,14 @@ tickers_that_need_primary_exchange = {
 class Stock(Contract):
     def __init__(self, symbol, primaryExchange=None, currency="USD"):
         super().__init__()
-        self.symbol = symbol
+        self.symbol = symbol.upper()
         self.secType = "STK"
         self.exchange = "SMART"
         self.currency = currency
         if primaryExchange != None:
             self.primaryExchange = primaryExchange
-        elif symbol in tickers_that_need_primary_exchange:
-            self.primaryExchange = tickers_that_need_primary_exchange[symbol]
+        elif self.symbol in tickers_that_need_primary_exchange:
+            self.primaryExchange = tickers_that_need_primary_exchange[self.symbol]
 
 
 class Index(Contract):
