@@ -148,6 +148,9 @@ class BrokerPlatform(EWrapper):
 
     def handle_request(self, request: Request):
         try:
+            # If we are handing a synchronous request, we need to check for no response/timeout.
+            check_time_out = request.is_synchronous
+
             # Assign a request id
             self.request_manager.add(request)
 
@@ -155,7 +158,10 @@ class BrokerPlatform(EWrapper):
             request_type = type(request)
             if (request_type == HistoricalDataRequest):
                 self.client.reqHistoricalData(request.request_id, request.contract, to_ib_timestr(
-                    request.end), request.duration, request.bar_size, "TRADES", 0, 2, False, [])
+                    request.end), request.duration, request.bar_size, "TRADES", 0, 2, request.keep_updated, [])
+                # Historical requests shouldn't time out as we are waiting for potentially a long time.
+                # TODO: in the future we could have a 'check request' loop that makes sure we got some data
+                check_time_out = False
             elif (request_type == ContractDetailsRequest or request_type == OptionChainRequest):
                 self.client.reqContractDetails(
                     request.request_id, request.contract)
@@ -167,7 +173,7 @@ class BrokerPlatform(EWrapper):
                 self.client.reqMktData(request.request_id, request.contract, "456", False, False, [])
 
             # If synchrononous wait on it.
-            if (request.is_synchronous):
+            if (check_time_out):
                 request.event.wait(10)
                 if not request.event.is_set():
                     request.timeout()
@@ -446,13 +452,17 @@ class BrokerPlatform(EWrapper):
             for TRADES).
         WAP -   the bar's Weighted Average Price
         hasGaps  -indicates if the data has gaps or not. """
-        args = locals()
-        del args["self"]
-        self.request_manager.get(reqId).on_data(**args)
+        request = self.request_manager.get(reqId)
+        if self.bar_manager:
+            self.bar_manager.on_historical_bar(request.contract, bar)
+        request.on_data(reqId, bar)
 
     def historicalDataEnd(self, reqId: int, start: str, end: str):
         """ Marks the ending of the historical bars reception. """
-        self.logAnswer(current_fn_name(), vars())
+        args = locals().copy()
+        del args["self"]
+        del args["reqId"]
+        self.request_manager.mark_finished(reqId, **args)
 
     def scannerParameters(self, xml: str):
         """ Provides the xml-formatted parameters available to create a market
@@ -755,9 +765,10 @@ class BrokerPlatform(EWrapper):
 
     def historicalDataUpdate(self, reqId: int, bar: BarData):
         """returns updates in real time when keepUpToDate is set to True"""
-        args = locals()
-        del args["self"]
-        self.request_manager.get(reqId).on_data(**args)
+        request = self.request_manager.get(reqId)
+        if self.bar_manager:
+            self.bar_manager.on_historical_bar(request.contract, bar)
+        request.on_data(reqId, bar)
 
     def rerouteMktDataReq(self, reqId: int, conId: int, exchange: str):
         """returns reroute CFD contract information for market data request"""

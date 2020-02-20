@@ -6,8 +6,8 @@ from .request import Request
 
 
 class HistoricalDataRequest(Request):
-    def __init__(self, symbol, end_date, duration="1 D", bar_size="1 min", id=None):
-        super().__init__(Stock(symbol))
+    def __init__(self, symbol, end_date, duration="1 D", bar_size="1 min", keep_updated=False, id=None):
+        super().__init__(Stock(symbol), is_synchronous=not keep_updated)
         self.bars = []
         self.end = end_date
         self.symbol = symbol
@@ -15,6 +15,7 @@ class HistoricalDataRequest(Request):
         self.bar_size = bar_size
         self.id = id
         self.earliest_date_received = end_date
+        self.keep_updated = keep_updated
 
     def set_data_folder(self, folder):
         self.folder = folder
@@ -26,14 +27,12 @@ class HistoricalDataRequest(Request):
 
         return False
 
-    def on_data(self, **kwargs):
-        assert self.request_id == kwargs["reqId"]
-        
-        bar = kwargs["bar"]
+    def on_data(self, request_id, bar):
+        assert self.request_id == request_id
 
         bar_date = datetime.datetime.fromtimestamp(int(bar.date))
         self.earliest_date_received = min(
-            self.earliest_date_received, bar_date)
+            self.earliest_date_received, bar_date) if self.earliest_date_received else bar_date
         self.bars.append(bar)
 
     def complete(self, **kwargs):
