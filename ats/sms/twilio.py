@@ -1,15 +1,20 @@
 import os
 from twilio.rest import Client
 
-account_sid = os.environ['TWILIO_ACCOUNT_SID']
-auth_token = os.environ['TWILIO_AUTH_TOKEN']
+account_sid = os.environ.get('TWILIO_ACCOUNT_SID', None)
+auth_token = os.environ.get('TWILIO_AUTH_TOKEN', None)
 
-number_from = os.environ['TWILIO_PHONE_NUMBER']
-number_to = os.environ['NOTIFY_PHONE_NUMBER']
+number_from = os.environ.get('TWILIO_PHONE_NUMBER', None)
+number_to = os.environ.get('NOTIFY_PHONE_NUMBER', None)
 
-client = Client(account_sid, auth_token)
+# TOOD: make this a class.
+client = None
 
 def send_notification(msg):
+    global client
+    if not client:
+        client = Client(account_sid, auth_token)
+
     message = client.messages \
                 .create(
                      body=msg,

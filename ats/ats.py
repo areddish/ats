@@ -178,7 +178,7 @@ class BrokerPlatform(EWrapper):
 
             # Process it based on type, making appropriate calls into the client.
             request_type = type(request)
-            if (request_type == HistoricalDataRequest):
+            if isinstance(request, HistoricalDataRequest):
                 self.client.reqHistoricalData(request.request_id, request.contract, to_ib_timestr(
                     request.end), request.duration, request.bar_size, "TRADES", 0, 2, request.keep_updated, [])
                 # Historical requests shouldn't time out as we are waiting for potentially a long time.
@@ -481,7 +481,7 @@ class BrokerPlatform(EWrapper):
         request = self.request_manager.get(reqId)
         if self.bar_manager:
             self.bar_manager.on_historical_bar(request.contract, bar)
-        request.on_data(reqId, bar)
+        request.on_data(**{"reqId": reqId, "bar": bar})
 
     def historicalDataEnd(self, reqId: int, start: str, end: str):
         """ Marks the ending of the historical bars reception. """
@@ -794,7 +794,7 @@ class BrokerPlatform(EWrapper):
         """returns updates in real time when keepUpToDate is set to True"""
         request = self.request_manager.get(reqId)
         if self.bar_manager:
-            self.bar_manager.on_historical_bar(request.contract, bar)
+            self.bar_manager.on_historical_bar(request.contract, bar, is_update=True)
         request.on_data(reqId, bar)
 
     def rerouteMktDataReq(self, reqId: int, conId: int, exchange: str):

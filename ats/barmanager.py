@@ -1,5 +1,5 @@
 from .barutils import BarAggregator, BarData
-from .requests import RealTimeBarSubscription
+from .requests import RealTimeBarSubscription, RealTimeBarSubscriptionWithBackFill
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
@@ -59,15 +59,60 @@ class BarManager(object):
     def on_bar(self, contract, bar):
         self.bar_db.record_bar(contract, bar)
 
-        agg = self.aggregators[contract.symbol]
+        agg = self.aggregators.get(contract.symbol, None)
+        if agg:
+            agg.add_bar(bar)
+            # local_time = time.localtime(timeStamp)
+            # pretty_print_time = time.strftime('%Y-%m-%d %H:%M:%S', local_time)
+            # print(reqId, pretty_print_time, high, low, open, close,
+            #       volume, count)
 
-        agg.add_bar(bar)
-        # local_time = time.localtime(timeStamp)
-        # pretty_print_time = time.strftime('%Y-%m-%d %H:%M:%S', local_time)
-        # print(reqId, pretty_print_time, high, low, open, close,
-        #       volume, count)
+    def on_historical_bar(self, contract, bar, is_update=False):
+        b = self.convert_bar(bar)
+        if is_update:
+            self.on_bar(contract, b)
+        else:
+            self.bar_db.record_bar(contract, b)
 
-    def on_historical_bar(self, contract, bar):
+    def on_historical_finished(self, contract):
+        ''' This should mark that we have no gaps in the data and are ready
+            to send call backs as the bar agg should be primed with the requested
+            data plus any new
+        '''
+        pass
+
+    def subscribe(self, contract, duration="1 min", callback=None):
+        self.aggregators[contract.symbol] = BarAggregator(contract, callback=callback)
+
+        request = RealTimeBarSubscription(contract, self)
+
+        assert contract.symbol not in self.subscriptionRequests
+        self.subscriptionRequests[contract.symbol] = request
+
+        self.broker.handle_request(request)
+
+    def subscribe_from(self, contract, duration="1 min", end_date=None, callback=None):
+        ''' Subscribe from a date before and then continuing
+        '''
+        self.aggregators[contract.symbol] = BarAggregator(contract, callback=callback, live=False)
+
+        # TODO: this should be contract passing in
+        request = RealTimeBarSubscriptionWithBackFill(contract.symbol, end_date, self)
+        assert contract.symbol not in self.subscriptionRequests
+        self.subscriptionRequests[contract.symbol] = request
+
+        self.broker.handle_request(request)
+
+    def unsubscribe(self, contract):
+        # Remove/Flush self.aggregators[contract.symbol]
+
+        request = self.subscriptionRequests[contract.symbol]
+        self.broker.cancel_request(request)
+
+    def on_backfill_complete(self, contract, bars):
+        self.aggregators[contract.symbol].on_backfill_complete(bars)
+
+    def convert_bar(self, bart):
         b = BarData()
         b.time = datetime.datetime.fromtimestamp(int(bar.date))
         b.open = bar.open
@@ -77,25 +122,4 @@ class BarManager(object):
         b.volume = bar.volume
         b.average = bar.average
         b.barCount = bar.barCount
-        self.bar_db.record_bar(contract, b)
-
-    def subscribe(self, contract, duration="1 min", callback=None):
-        self.aggregators[contract.symbol] = BarAggregator(contract, "c:\\temp", callback=callback)
-
-        request = RealTimeBarSubscription(contract, self)
-
-        assert contract.symbol not in self.subscriptionRequests
-        self.subscriptionRequests[contract.symbol] = request
-
-        self.broker.handle_request(request)
-
-    def subscribe_from(self, contract, duration="1 min", start=None, callback=None):
-        ''' Subscribe from a date before and then continuing
-        '''
-        pass
-
-    def unsubscribe(self, contract):
-        # Remove/Flush self.aggregators[contract.symbol]
-
-        request = self.subscriptionRequests[contract.symbol]
-        self.broker.cancel_request(request)
+        return b

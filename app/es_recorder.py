@@ -50,7 +50,7 @@ if "__main__" == __name__:
             exit(-1)
 
 
-
+        bar_man.subscribe_from(Stock("msft"), duration='5 S', end_date=None)
 #        bar_man.subscribe(es_future)
 
         req = HistoricalDataRequest("msft", None, keep_updated=True)

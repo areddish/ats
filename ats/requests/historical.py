@@ -6,14 +6,13 @@ from .request import Request
 
 
 class HistoricalDataRequest(Request):
-    def __init__(self, symbol, end_date, duration="1 D", bar_size="1 min", keep_updated=False, id=None):
+    def __init__(self, symbol, end_date, duration="1 D", bar_size="1 min", keep_updated=False):
         super().__init__(Stock(symbol), is_synchronous=not keep_updated)
         self.bars = []
         self.end = end_date
         self.symbol = symbol
         self.duration = duration
         self.bar_size = bar_size
-        self.id = id
         self.earliest_date_received = end_date
         self.keep_updated = keep_updated
 
