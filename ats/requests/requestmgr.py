@@ -42,6 +42,7 @@ class RequestManager():
     def mark_finished(self, reqId, **kwargs):
         request = self.requests[reqId]
         request.complete(**kwargs)
+        request.event.set()
         #del self.requests[reqId]
         self.__free_request(reqId)
 
@@ -72,13 +73,3 @@ class RequestManager():
         else:
             print(f"freeing request... {id}")
             self.freed_request_ids.append(id)
-
-# class RequestSynchronizer:
-#     def __init__(self, reqId):
-#         self.event = Event()
-
-#     def start():
-#         pass
-
-#     def end():
-#         self.event.set()

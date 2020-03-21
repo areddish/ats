@@ -7,7 +7,7 @@ class ContractDetailsRequest(Request):
         self.request_type = RequestType.CONTRACT_DETAILS
 
     def on_data(self, **kwargs):
-        contractDetails = kwargs["contractDetails"]        
+        contractDetails = kwargs["contractDetails"]
         print(contractDetails.contract.symbol, contractDetails.contractMonth, contractDetails.contract.conId)
         
         print(contractDetails.marketName)
@@ -18,6 +18,6 @@ class ContractDetailsRequest(Request):
         print(contractDetails.subcategory)
         #print(contractDetails.tradingHours)
         #print(contractDetails.liquidHours)
-        print(contractDetails.contract)        
+        print(contractDetails.contract)
         
         #pickle.dump(contractDetails, open(contractDetails.contract.symbol, "wt"))
