@@ -19,7 +19,7 @@ if "__main__" == __name__:
         print(f"Ask Price {request.ask}")
         print(f"Last Price {request.last}")
         print(f"Bid Price {request.bid}")
-        print(f"Volumne {request.volume}")
+        print(f"Volume {request.volume}")
 
         print("Shutting down...")
         trader.disconnect()

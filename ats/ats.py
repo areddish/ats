@@ -17,7 +17,6 @@ from .account import AccountManager
 
 from threading import Thread, Event
 import logging
-import argparse
 
 import os
 import time
@@ -31,7 +30,6 @@ def to_ib_timestr(dt):
     if not dt:
         return ""
     return dt.strftime("%Y%m%d %H:%M:%S")
-
 
 def to_duration(dt_start, dt_end):
     return f"{(dt_end - dt_start).seconds} S"
@@ -62,8 +60,9 @@ class BrokerPlatform(EWrapper):
 
         self.accounts = []
 
-        self.bar_manager = bar_manager
-        self.bar_manager.connect_broker(self)
+        if bar_manager:
+            self.bar_manager = bar_manager
+            self.bar_manager.connect_broker(self)
 
     def error(self, reqId: int, errorCode: int, errorString: str):
         try:
@@ -189,8 +188,8 @@ class BrokerPlatform(EWrapper):
                     request.request_id, request.contract)
             elif (request_type == RealTimeBarSubscription):
                 self.client.reqRealTimeBars(request.request_id, request.contract, 5, "TRADES", 0, [])
-            elif (request_type == RealTimeMarketSubscription):
-                self.client.reqMktData(request.request_id, request.contract, "", False, False, [])
+            elif isinstance(request, RealTimeMarketSubscription):
+                self.client.reqMktData(request.request_id, request.contract, "", request.is_snapshot, False, [])
             elif (request_type == DividendDetailsRequest):
                 self.client.reqMktData(request.request_id, request.contract, "456", False, False, [])
 
