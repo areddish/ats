@@ -8,6 +8,7 @@ from ats.barmanager import BarManager
 from ats.assets import Stock, Future
 from ats.requests import *
 from ats.strategies import bollinger_bandwidth
+from ats.asset_utils import findNearestContractMonth
 
 if "__main__" == __name__:
     print("Starting up...")
@@ -39,10 +40,7 @@ if "__main__" == __name__:
             print ("Couldn't connect.")
             exit(-1)
 
-        es_future = Future("ES")
-        # TODO: need a way to find the next forward future 
-        #esdec21.find_next_forward_month()
-        es_future.lastTradeDateOrContractMonth = "20200320"
+        es_future = findNearestContractMonth(trader, Future("ES"))
 
         # bar_man = BarManager(trader)
         # bar_man.subscribe(esdec21)
