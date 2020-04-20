@@ -20,3 +20,18 @@ i.e. on windows
 cd "\tws api-latest\source\pythonclient"
 pip install -e .
 ```
+
+
+
+# Install TWS API package
+
+git clone https://github.com/InteractiveBrokers/tws-api
+cd source\pythonclient
+pip install wheel
+python setup.py bdist_wheel
+python -m pip install --user --upgrade dist\ibapi-9.76.1-py3-none-any.whl
+
+# Install ATS
+
+cd ats
+pip install -e
