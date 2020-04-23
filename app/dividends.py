@@ -1,6 +1,8 @@
 import os
 import argparse
 import time
+import datetime
+import math
 
 from ats.ats import BrokerPlatform
 from ats.barmanager import BarManager
@@ -66,22 +68,34 @@ if "__main__" == __name__:
     try:
         trader.connect()
 
+        # set to delayed
+        #trader.client.reqMarketDataType(3)
+
         if (not trader.is_connected):
             print ("Couldn't connect.")
             exit(-1)
 
-        data = []
+        data = DataFrame(columns=["Symbol", "Last", "Date", "Payout"])
+        data.set_index("Symbol", inplace=True)
+
         for ticker in dividend_tickers:
             print(f"{datetime.datetime.now().strftime('%H:%M:%S.%MS')}: Getting data for {ticker['symbol']}...")
-            request = DividendDetailsRequest(Stock(ticker['symbol']))
+
+            stock = Stock(ticker['symbol'])
+            request = DividendDetailsRequest(stock)
             trader.handle_request(request)
             #print (request.result)
-            data.append((ticker['symbol'], request.next_date, request.next_payout))
-            df = DataFrame(data, columns=["Symbol","Date","Payout"])
-            df.to_csv("dividend_pays.csv")
+
+            quote = DelayedSnapshotQuote(stock)
+            trader.handle_request(quote)
+            data.loc[ticker['symbol']] = [  quote.last, request.next_date, request.next_payout ]
+
+            #df = DataFrame(data, columns=["Symbol","Date","Payout"])
+            #df.to_csv("dividend_pays.csv")
             trader.cancel_request(request)
             print(f"{datetime.datetime.now().strftime('%H:%M:%S.%MS')}: {ticker['symbol']} done!")
         
+        data.to_csv("dividend_pays.csv")
 #         for sym in ["AAPL", "TNA", "MSFT", "SPY", "TSLA", "BAC", "AMZN"]:
 #             details_req = ContractDetailsRequest(Stock(sym))
 #             trader.handle_request(details_req)
@@ -108,6 +122,8 @@ if "__main__" == __name__:
         print("Interrupt! Closing...")
         print("Sending Disconnect. ")
         print("Waiting for disconnect...")
+    except Exception as error:
+        print("Error..", error)
 
     trader.disconnect()
     print("Goodbye")
