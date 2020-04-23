@@ -27,11 +27,11 @@ class Strategy:
         if (self.position):
             if self.check_sell_condition(augmented_bar):
                 print(f"Stratgey has sell signal! SELL")
-                self.open_position(augmented_bar)
-        else:
-            if self.check_buy_condition(augmented_bar):
-                print(f"Stratgey has buy signal! BUY")
                 self.close_position(augmented_bar)
+        else:
+           if self.check_buy_condition(augmented_bar):
+                print(f"Stratgey has buy signal! BUY")
+                self.open_position(augmented_bar)
 
     def on_fill(self, qty):
         raise NotImplementedError()
