@@ -50,7 +50,7 @@ class Order(Order):
         if not self.notified:
             send_notification(f"{self.action}: {self.contract.symbol} {qty} @ ${avgFillPrice}")
             if self.on_filled:
-                self.on_filled()
+                self.on_filled(avgFillPrice)
             self.notified = True
 
     def update(self, status, filled, remaining, avgFilPrice):
@@ -66,6 +66,9 @@ class OrderManager(object):
         self.trader = trader
         self.executions = {}
         self.commissions = {}
+
+    def associate_account(self, account):
+        self.account = account
 
     def get_open_orders():
         # Synchronize our orders against open
@@ -119,6 +122,7 @@ class OrderManager(object):
         order.orderId = self._inc_order_id()
         order.totalQuantity = qty
         order.action = "BUY" if order_type == OrderType.BUY else "SELL"
+        order.outsideRth = True
         order.transmit = True
         return order
 
