@@ -9,9 +9,8 @@ class RealTimeBarSubscription(Request):
     def on_data(self, **kwargs):
         assert self.request_id == kwargs["reqId"]
 
-        bar = kwargs["bar"]
+        bar = kwargs["dataFrame"]
         self.bar_manager.on_bar(self.contract, bar)
-        print (f"BAR: {bar}")
 
     def complete(self, **kwargs):
         # Called when subscription cancelled
@@ -37,7 +36,6 @@ class RealTimeBarSubscriptionWithBackFill(HistoricalDataRequest):
 
         bar = kwargs["bar"]
         self.bars.append(bar)
-        print (f"BAR: {bar}")
 
     def complete(self, **kwargs):
         # Called when subscription cancelled

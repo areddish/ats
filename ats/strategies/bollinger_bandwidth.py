@@ -3,6 +3,7 @@ from ats.barmanager import BarManager, BarDb
 from ats.bollingerbands import bbands_last, bbands_percent
 from ats.util.util import get_user_file
 from enum import Enum
+from ats.sms.twilio import send_notification
 
 class Indicators(Enum):
     BollingerBands = 1
@@ -21,6 +22,7 @@ class BollingerBandIndicator(Indicator):
         super().__init__(owner, contract, Indicators.BollingerBands)
         self.period = period
         self.num_std_dev = n_std_dev
+        send_notification("Starting...")
 
     def on_bar(self, current_bar, all_bars):
         print("BollingerBandIndicator: got bar... ",end="")
@@ -29,22 +31,32 @@ class BollingerBandIndicator(Indicator):
             print(f"Not enough data {len(all_bars)}/{self.period}, skipping")
             return
 
-        data = [bar.close for bar in all_bars]
-        upper, middle, lower = bbands_last(data, window_size=self.period, num_std_dev=self.num_std_dev)
-        percent = bbands_percent(upper, lower, current_bar.close)
+        # data = [bar.close for bar in all_bars]
+        # upper, middle, lower = bbands_last(data, window_size=self.period, num_std_dev=self.num_std_dev)
+        # percent = bbands_percent(upper, lower, current_bar.close)
+        relevant_bars = all_bars.iloc[-self.period:].copy()
 
-        augmented_bar = vars(current_bar)
+        col_name = f"bb_{self.period}"
+        relevant_bars[col_name] = relevant_bars["close"].rolling(window=self.period).mean()
+        relevant_bars[col_name+"_std"] = relevant_bars["close"].rolling(window=self.period).std()
+        relevant_bars.dropna(inplace=True)        
+        relevant_bars[col_name+"_upper"] = relevant_bars[col_name] + self.num_std_dev * relevant_bars[col_name+"_std"]
+        relevant_bars[col_name+"_lower"] = relevant_bars[col_name] - self.num_std_dev * relevant_bars[col_name+"_std"]
+        relevant_bars[col_name+"_pct"] = (current_bar.iloc[0]["close"] - relevant_bars[col_name+"_lower"])/(relevant_bars[col_name+"_upper"]-relevant_bars[col_name+"_lower"])
+        relevant_bars.dropna(inplace=True)    
+
+        augmented_bar = dict(relevant_bars.tail(1).iloc[0])
         augmented_bar["indicators"] = {
                 self.type: {
                     self.period: {
-                        "upper": upper,
-                        "middle": middle,
-                        "lower": lower,
-                        "percent": percent
+                        "upper": augmented_bar[col_name+"_upper"],
+                        "middle": augmented_bar[col_name],
+                        "lower": augmented_bar[col_name+"_lower"],
+                        "percent": augmented_bar[col_name+"_pct"]
                     }
                 }
             }
-        print(f"Computed: {upper} {middle} {lower} {percent}. Calling strategy")
+        print(f"Computed: {augmented_bar}. Calling strategy")
         super().on_bar(augmented_bar, all_bars)
 
 def create_indicator(strategy, contract, indicator_data):
@@ -62,10 +74,10 @@ class InidicatorStrategy(Strategy):
     def register(self, trader):
         assert not self.bar_manager
         # TODO: fix this bar db
-        self.bar_manager = BarManager(trader, BarDb(get_user_file(trader.APP_NAME, f"{self.contract.symbol}-{self.contract.lastTradeDateOrContractMonth}.db")))
+        self.bar_manager = BarManager(trader, None)#BarDb(get_user_file(trader.APP_NAME, f"{self.contract.symbol}-{self.contract.lastTradeDateOrContractMonth}.db")))
 
         if self.indicator and not self.registered:
-            self.bar_manager.subscribe(self.indicator.contract, callback=self.indicator.on_bar)
+            self.bar_manager.subscribe(self.indicator.contract, period=24, callback=self.indicator.on_bar)
             self.registered = True
 
     def unregister(self, trader):
@@ -73,7 +85,7 @@ class InidicatorStrategy(Strategy):
             self.bar_manager.unsubscribe(self.indicator.contract)
 
 class BollingerBandwithStrategy(InidicatorStrategy):
-    def __init__(self, contract, allocation, bottom_threshold=0.2, top_threshold=0.7):
+    def __init__(self, contract, allocation, min_tick, bottom_threshold=0.2, top_threshold=0.7, period=24):
         super().__init__(contract, allocation)
 
         self.has_dipped = False
@@ -83,9 +95,10 @@ class BollingerBandwithStrategy(InidicatorStrategy):
         self.qty_owned = 0
         self.order_placed = False
         # needed?
-        self.indicator_name = "BBANDWIDTH_24"
-        # 24 minute bollinger bands
-        self.indicator = create_indicator(self, self.contract, { "type": Indicators.BollingerBands, "period": 24 })
+        self.indicator_name = f"BBANDWIDTH_{period}"
+        # peroid minute bollinger bands
+        self.indicator = create_indicator(self, self.contract, { "type": Indicators.BollingerBands, "period": period })
+        self.min_tick = min_tick
 
     def check_buy_condition(self, augmented_bar):
         """
@@ -162,13 +175,38 @@ class BollingerBandwithStrategy(InidicatorStrategy):
         # TODO: this should compute based on self.allocation / price + fees
         self.qty_desired = 1
 
-        market, profit, stop = self.order_manager.create_bracket_order(self.contract, self.qty_desired, profit, stop)
-        self.order_manager.place_order(stop)
-        self.order_manager.place_order(profit)
-        self.order_manager.place_order(market)
+        def snap_to_increment(price, min_tick):
+            return min_tick * (price + min_tick) // min_tick
+
+        market_order, profit_order, stop_order = self.order_manager.create_bracket_order(self.contract, self.qty_desired, snap_to_increment(profit, self.min_tick), snap_to_increment(stop, self.min_tick))
+        market_order.on_filled = self.positionFill
+        profit_order.on_filled = self.positionClosed
+        stop_order.on_filled = self.positionStoppedOut
+
+        self.order_manager.place_order(market_order)
+        self.order_manager.place_order(profit_order)
+        self.order_manager.place_order(stop_order)
         self.order_placed = True
+        send_notification(f"Sending orders market, {profit} {stop}...")        
 
     def close_position(self, augmented_bar):
         # TODO: Right now we are using bracket orders to close. So this isn't
         # needed to do anything.
-        pass
+        pass        
+        
+    def positionFill(self, avg_price):
+        self.position = True
+        self.has_dipped = False
+        send_notification(f"OPEN POSITION: {self.contract.symbol} {avg_price}...")
+
+    def positionStoppedOut(self, avg_price):
+        self.position = False
+        self.has_dipped = True
+        send_notification(f"STOP POSITION: {self.contract.symbol} {avg_price}...")
+        self.order_placed = False
+
+    def positionClosed(self, avg_price):
+        self.position = False
+        self.has_dipped = False
+        send_notification(f"CLOSE POSITION: {self.contract.symbol} {avg_price}...")
+        self.order_placed = False
