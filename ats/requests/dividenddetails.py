@@ -12,7 +12,10 @@ class DividendDetailsRequest(Request):
     def on_data(self, **kwargs):
 
         tick_type = kwargs.get("tickType", -1)
-        if tick_type == 59:             
+        if tick_type == 4:
+            last = kwargs["price"]
+            print("LAST:", last)
+        elif tick_type == 59:             
             value = kwargs.get("value", "")
             data = value.split(",")
             '''

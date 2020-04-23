@@ -16,13 +16,13 @@ def findNearestContractMonth(platform, contract):
     # now find the one nearest to today.
     now = datetime.now()
     distance = 365
-    nearest_contract = None
+    nearest_details = None
     for detail in request.details:
         dt = datetime.strptime(detail.contractMonth, "%Y%m")
         if (now < dt):
             delta = dt - now
             if delta.days < distance:
                 distance = delta.days
-                nearest_contract = detail.contract
+                nearest_details = detail
         
-    return nearest_contract
+    return nearest_details.contract, nearest_details
