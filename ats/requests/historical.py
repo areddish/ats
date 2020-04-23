@@ -3,18 +3,17 @@ import datetime
 
 from ..assets import Stock
 from .request import Request
-
+from pandas import DataFrame
 
 class HistoricalDataRequest(Request):
-    def __init__(self, symbol, end_date, duration="1 D", bar_size="1 min", keep_updated=False):
-        super().__init__(Stock(symbol), is_synchronous=not keep_updated)
-        self.bars = []
+    def __init__(self, contract, end_date, duration="1 D", bar_size="1 min", keep_updated=False):
+        super().__init__(contract, is_synchronous=not keep_updated)
+        self.bars = DataFrame()
         self.end = end_date
-        self.symbol = symbol
         self.duration = duration
         self.bar_size = bar_size
-        self.earliest_date_received = end_date
         self.keep_updated = keep_updated
+        self.on_complete = None
 
     def set_data_folder(self, folder):
         self.folder = folder
@@ -28,11 +27,7 @@ class HistoricalDataRequest(Request):
 
     def on_data(self, request_id, bar):
         assert self.request_id == request_id
-
-        bar_date = datetime.datetime.fromtimestamp(int(bar.date))
-        self.earliest_date_received = min(
-            self.earliest_date_received, bar_date) if self.earliest_date_received else bar_date
-        self.bars.append(bar)
+        self.bars = self.bars.append(bar, verify_integrity=True)
 
     def complete(self, **kwargs):
         # with open(os.path.join(self.folder, f"{self.symbol}-{self.end.strftime('%m-%d-%Y')}.txt"), "wt") as data_file:
@@ -40,3 +35,6 @@ class HistoricalDataRequest(Request):
         #         print(
         #             f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
         print("Complete:", kwargs["start"], "-", kwargs["end"])
+        if self.on_complete:            
+            self.on_complete()
+            self.on_complete = None

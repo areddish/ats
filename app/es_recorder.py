@@ -53,7 +53,7 @@ if "__main__" == __name__:
         bar_man.subscribe_from(Stock("msft"), duration='5 S', end_date=None)
 #        bar_man.subscribe(es_future)
 
-        req = HistoricalDataRequest("msft", None, keep_updated=True)
+        req = HistoricalDataRequest(Stock("msft"), None, keep_updated=True)
         trader.handle_request(req)
         trader.run()
         print ("Unsubscribing...")

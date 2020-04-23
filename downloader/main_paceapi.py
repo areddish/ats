@@ -105,7 +105,7 @@ if "__main__" == __name__:
         start = datetime.datetime.now()
         while (start.year > 2002):
             print (f"Requesting 30 days from {start.strftime('%m-%d-%Y')}")
-            request = HistoricalDataRequest(args.symbol, start, "30 D", id = args.id)                
+            request = HistoricalDataRequest(Stock(args.symbol), start, "30 D", id = args.id)                
             request.set_data_folder(symbol_dir)
             broker.queue_request(request)
             start = request.earliest_date_received - datetime.timedelta(days=1)
