@@ -4,7 +4,7 @@ from .requestmgr import RequestManager
 from .contractdetails import ContractDetailsRequest
 from .historical import HistoricalDataRequest
 from .barsubscription import RealTimeBarSubscription, RealTimeBarSubscriptionWithBackFill
-from .marketsubscription import RealTimeMarketSubscription, SnapshotQuote
+from .marketsubscription import RealTimeMarketSubscription, SnapshotQuote, DelayedSnapshotQuote
 from .dividenddetails import DividendDetailsRequest
 from .optionchain import OptionChainRequest
 
@@ -19,5 +19,6 @@ _all__ = [
     'DividendDetailsRequest',
     'OptionChainRequest',
     'RealTimeBarSubscriptionWithBackFill',
-    'SnapshotQuote'
+    'SnapshotQuote',
+    'DelayedSnapshotQuote'
 ]
