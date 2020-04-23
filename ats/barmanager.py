@@ -1,5 +1,5 @@
 from .barutils import BarAggregator, BarData
-from .requests import RealTimeBarSubscription, RealTimeBarSubscriptionWithBackFill
+from .requests import RealTimeBarSubscription, RealTimeBarSubscriptionWithBackFill, HistoricalDataRequest
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
@@ -57,7 +57,8 @@ class BarManager(object):
         self.broker = broker
 
     def on_bar(self, contract, bar):
-        self.bar_db.record_bar(contract, bar)
+        if self.bar_db:
+            self.bar_db.record_bar(contract, bar)
 
         agg = self.aggregators.get(contract.symbol, None)
         if agg:
@@ -72,7 +73,8 @@ class BarManager(object):
         if is_update:
             self.on_bar(contract, b)
         else:
-            self.bar_db.record_bar(contract, b)
+            if self.bar_db:
+                self.bar_db.record_bar(contract, b)
 
     def on_historical_finished(self, contract):
         ''' This should mark that we have no gaps in the data and are ready
@@ -81,15 +83,21 @@ class BarManager(object):
         '''
         pass
 
-    def subscribe(self, contract, duration="1 min", callback=None):
+    def subscribe(self, contract, duration="1 min", period=1, callback=None):
+        if period > 1:
+            callback = self.create_backfill_callback(contract, callback, period)
         self.aggregators[contract.symbol] = BarAggregator(contract, callback=callback)
 
+
+        # Create the initial realtime query
         request = RealTimeBarSubscription(contract, self)
 
         assert contract.symbol not in self.subscriptionRequests
         self.subscriptionRequests[contract.symbol] = request
 
         self.broker.handle_request(request)
+
+        # Create a historical request for last period - 1 bars.
 
     def subscribe_from(self, contract, duration="1 min", end_date=None, callback=None):
         ''' Subscribe from a date before and then continuing
@@ -112,9 +120,27 @@ class BarManager(object):
     def on_backfill_complete(self, contract, bars):
         self.aggregators[contract.symbol].on_backfill_complete(bars)
 
-    def convert_bar(self, bart):
+    def create_backfill_callback(self, contract, original_callback, period):
+        def callback_to_trigger_backfill(bar, bars):
+            def on_backfill_complete():
+                # add all of the bars
+                self.aggregators[contract.symbol].back_fill(bar, request.bars, original_callback)
+
+            # We have 1 minute of data, lets get period - 1.
+            end_date = bar.index + datetime.timedelta(seconds=5) - datetime.timedelta(minutes=1)
+            request = HistoricalDataRequest(contract, end_date.to_pydatetime()[0], duration=f"{60*(period-1)} S")
+            request.on_complete = on_backfill_complete
+            self.broker.handle_request(request)
+
+            # Disable current callback until we fill all of the backdated requests
+            self.aggregators[contract.symbol].callback = None
+
+        return callback_to_trigger_backfill
+
+            
+    def convert_bar(self, bar):
         b = BarData()
-        b.time = datetime.datetime.fromtimestamp(int(bar.date))
+        b.time = datetime.datetime.fromtimestamp(int(bar))
         b.open = bar.open
         b.high = bar.high
         b.low = bar.low
