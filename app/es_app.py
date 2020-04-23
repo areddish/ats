@@ -17,7 +17,7 @@ if "__main__" == __name__:
     arg_parser.add_argument("-p", "--port", action="store", type=int,
                             help="TCP port to connect to", dest="port", default=7496)
     arg_parser.add_argument("-i", "--id", action="store",
-                            type=int, help="Client ID", dest="id", default=41026)
+                            type=int, help="Client ID", dest="id", default=51026)
     arg_parser.add_argument("-d", "--data", action="store", type=str,
                             help="Directory of data", dest="data_dir", default=".\\")
     args = arg_parser.parse_args()
@@ -40,13 +40,13 @@ if "__main__" == __name__:
             print ("Couldn't connect.")
             exit(-1)
 
-        es_future = findNearestContractMonth(trader, Future("ES"))
-
-        # bar_man = BarManager(trader)
-        # bar_man.subscribe(esdec21)
-
-        strat = bollinger_bandwidth.BollingerBandwithStrategy(es_future, 3400)
+        es_future, es_future_details = findNearestContractMonth(trader, Future("ES"))
+        strat = bollinger_bandwidth.BollingerBandwithStrategy(es_future, 6000, es_future_details.minTick)
         strat.run(trader)
+
+        #spy = Stock("spy")
+        #strat = bollinger_bandwidth.BollingerBandwithStrategy(spy, 6000, 0.01)
+        #strat.run(trader)
 
 #        amzn_strategy = BollingBandPercentStrategy(Stock("AMZN"), bar_man)
        
