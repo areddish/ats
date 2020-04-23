@@ -9,6 +9,9 @@ from ibapi.execution import Execution
 from ibapi.ticktype import *
 from ibapi.commission_report import CommissionReport
 
+from .historical_data_mixin import HistoricalDataMixin
+from .realtime_bar_mixin import RealTimeBarMixin
+
 from .assets import *
 from .orders import *
 from .barutils import *
@@ -39,7 +42,7 @@ class BrokerPlatformConfig:
     client_id = 1000
     port = 9476
 
-class BrokerPlatform(EWrapper):
+class BrokerPlatform(RealTimeBarMixin, HistoricalDataMixin, EWrapper):
     def __init__(self, port, client_id, wait_for_account=True,bar_manager=None):
         self.client = EClient(wrapper=self)
         EWrapper.__init__(self)
@@ -195,7 +198,8 @@ class BrokerPlatform(EWrapper):
 
             # If synchrononous wait on it.
             if (check_time_out):
-                request.event.wait(10)
+                # Snapshots can take 15s, use that as timeout.
+                request.event.wait(15)
                 if not request.event.is_set():
                     request.timeout()
         except:
@@ -214,6 +218,7 @@ class BrokerPlatform(EWrapper):
         self.request_manager.mark_finished(request.request_id)
 
     def place_order(self, order):
+        print(f"Placing ORDER: {order.contract.symbol} {order.orderId} {order.parentId}")
         self.client.placeOrder(order.orderId, order.contract, order)
 
     def cancel_order(self, order):
@@ -251,7 +256,7 @@ class BrokerPlatform(EWrapper):
         self.request_manager.get(reqId).on_data(**args)
 
     def tickSnapshotEnd(self, reqId: int):
-        args = locals()
+        args = locals().copy()
         del args["self"]
         del args["reqId"]
         self.request_manager.mark_finished(reqId, **args)
@@ -462,32 +467,8 @@ class BrokerPlatform(EWrapper):
 
         self.logAnswer(current_fn_name(), vars())
 
-    def historicalData(self, reqId: int, bar: BarData):
-        """ returns the requested historical data bars
 
-        reqId - the request's identifier
-        date  - the bar's date and time (either as a yyyymmss hh:mm:ssformatted
-             string or as system time according to the request)
-        open  - the bar's open point
-        high  - the bar's high point
-        low   - the bar's low point
-        close - the bar's closing point
-        volume - the bar's traded volume if available
-        count - the number of trades during the bar's timespan (only available
-            for TRADES).
-        WAP -   the bar's Weighted Average Price
-        hasGaps  -indicates if the data has gaps or not. """
-        request = self.request_manager.get(reqId)
-        if self.bar_manager:
-            self.bar_manager.on_historical_bar(request.contract, bar)
-        request.on_data(**{"reqId": reqId, "bar": bar})
 
-    def historicalDataEnd(self, reqId: int, start: str, end: str):
-        """ Marks the ending of the historical bars reception. """
-        args = locals().copy()
-        del args["self"]
-        del args["reqId"]
-        self.request_manager.mark_finished(reqId, **args)
 
     def scannerParameters(self, xml: str):
         """ Provides the xml-formatted parameters available to create a market
@@ -519,42 +500,10 @@ class BrokerPlatform(EWrapper):
         del args["reqId"]
         self.request_manager.mark_finished(reqId, **args)
 
-    def realtimeBar(self, reqId: TickerId, time: int, open: float, high: float, low: float, close: float,
-                    volume: int, wap: float, count: int):
-        """ Updates the real time 5 seconds bars
-
-        reqId - the request's identifier
-        bar.time  - start of bar in unix (or 'epoch') time
-        bar.endTime - for synthetic bars, the end time (requires TWS v964). Otherwise -1.
-        bar.open  - the bar's open value
-        bar.high  - the bar's high value
-        bar.low   - the bar's low value
-        bar.close - the bar's closing value
-        bar.volume - the bar's traded volume if available
-        bar.WAP   - the bar's Weighted Average Price
-        bar.count - the number of trades during the bar's timespan (only available
-            for TRADES)."""
-        args = dict(locals())
-        del args["self"]
-        print("onbar")
-        #global bars
-        b = BarData()
-        # TODO: This isn't on a BarData, that's a historical thing.
-        b.time = time
-        b.open = open
-        b.high = high
-        b.low = low
-        b.close = close
-        b.volume = volume
-        b.average = wap
-        b.barCount = count
-        args["bar"] = b
-        self.request_manager.get(reqId).on_data(**args)
 
     def currentTime(self, time: int):
         """ Server's current time. This method will receive IB server's system
         time resulting after the invokation of reqCurrentTime. """
-
         self.logAnswer(current_fn_name(), vars())
 
     def fundamentalData(self, reqId: TickerId, data: str):
@@ -789,12 +738,6 @@ class BrokerPlatform(EWrapper):
         del args["self"]
         self.request_manager.get(reqId).on_data(**args)
 
-    def historicalDataUpdate(self, reqId: int, bar: BarData):
-        """returns updates in real time when keepUpToDate is set to True"""
-        request = self.request_manager.get(reqId)
-        if self.bar_manager:
-            self.bar_manager.on_historical_bar(request.contract, bar, is_update=True)
-        request.on_data(reqId, bar)
 
     def rerouteMktDataReq(self, reqId: int, conId: int, exchange: str):
         """returns reroute CFD contract information for market data request"""
