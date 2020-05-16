@@ -13,18 +13,18 @@ class BarAggregator:
         self.back_filling = not live
 
     def add_bar(self, df):
-        # Number of seconds in this bar
-        bar_seconds = df.index[0].second
-
+        # Number of seconds since start of bar
+        elapsedSeconds = int((df.index[0] - self.current_bar.index[0]).total_seconds()) if not self.current_bar.empty else 0
+        
         # TODO: Assuming we are getting bars in order. Need to add protection
         if not self.current_bar.empty:
             self.updateCurrentDataFrame(df)
-            if bar_seconds == 55:
+            if elapsedSeconds == self.timeSpanInSeconds - 5:
                 self.bars = self.bars.append(self.current_bar, verify_integrity=True)
                 if self.callback:
                     self.callback(df, self.bars)
                 self.current_bar = DataFrame()
-        elif bar_seconds == 0:
+        elif df.index[0].second == 0:
             # start this bar
             self.current_bar = df
 
