@@ -6,11 +6,16 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, Integer, String, Float, DateTime
 
 import datetime
-
-# TODO: Duration in seconds? or enum?
+from enum import Enum
 
 from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
+
+class BarDuration(Enum):
+    FiveSeconds = 5
+    OneMinute = 5 * 12
+    FiveMinutes = OneMinute * 5
+    FifeteenMinutes = FiveMinutes*3
 
 class BarObj(Base):
     __tablename__ = "bars"
@@ -83,10 +88,10 @@ class BarManager(object):
         '''
         pass
 
-    def subscribe(self, contract, duration="1 min", period=1, callback=None):
+    def subscribe(self, contract, duration=BarDuration.OneMinute, period=1, callback=None):
         if period > 1:
             callback = self.create_backfill_callback(contract, callback, period)
-        self.aggregators[contract.symbol] = BarAggregator(contract, callback=callback)
+        self.aggregators[contract.symbol] = BarAggregator(contract, desiredTimeSpanInSeconds=duration, callback=callback)
 
 
         # Create the initial realtime query
@@ -99,10 +104,10 @@ class BarManager(object):
 
         # Create a historical request for last period - 1 bars.
 
-    def subscribe_from(self, contract, duration="1 min", end_date=None, callback=None):
+    def subscribe_from(self, contract, duration=BarDuration.OneMinute, end_date=None, callback=None):
         ''' Subscribe from a date before and then continuing
         '''
-        self.aggregators[contract.symbol] = BarAggregator(contract, callback=callback, live=False)
+        self.aggregators[contract.symbol] = BarAggregator(contract, desiredTimeSpanInSeconds=duration, callback=callback, live=False)
 
         # TODO: this should be contract passing in
         request = RealTimeBarSubscriptionWithBackFill(contract.symbol, end_date, self)
