@@ -15,7 +15,7 @@ class BarAggregator:
     def add_bar(self, df):
         # Number of seconds since start of bar
         elapsedSeconds = int((df.index[0] - self.current_bar.index[0]).total_seconds()) if not self.current_bar.empty else 0
-        
+
         # TODO: Assuming we are getting bars in order. Need to add protection
         if not self.current_bar.empty:
             self.updateCurrentDataFrame(df)

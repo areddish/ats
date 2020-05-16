@@ -11,6 +11,12 @@ def to_timestamp(dt):
 
 
 class TestAssets(unittest.TestCase):
+    def setUp(self):
+        self.callback_count = 0
+
+    def callback(self, bars, allBars):
+        self.callback_count += 1
+
     def __create_expanding_bar(self, time, x, low=None):
         bar1 = BarData()
         bar1.time = time
@@ -24,6 +30,26 @@ class TestAssets(unittest.TestCase):
         bar1.hasGaps = ""
         bar1.barCount = 0
         return barDataToDataFrame(bar1)
+
+    def __generate_bar_series(self, start_time, number_of_bars):
+        bars = []
+        current_time = start_time
+        for x in range(0, number_of_bars):
+            bar1 = BarData()
+            bar1.time = current_time
+            bar1.date = current_time
+            bar1.open = x
+            bar1.high = x+1
+            bar1.low = -x
+            bar1.close = -x-1
+            bar1.volume = 1
+            bar1.average = 0.
+            bar1.hasGaps = ""
+            bar1.barCount = 0
+            bars.append(barDataToDataFrame(bar1))
+            current_time += 5
+        return bars
+
 
     def test_bar_high(self):
         bar_agg = BarAggregator(Stock("MSFT"))
@@ -83,92 +109,28 @@ class TestAssets(unittest.TestCase):
         self.assertEqual(bar_agg.current_bar.iloc[0].volume, 30)
 
     def test_5s_to_1min(self):
-        global bar_received        
-        bar_received = False
-
-        def callback(bar, all_bars):
-            global bar_received
-            print("Foo")
-            bar_received = True
-
-        bar_agg = BarAggregator(Stock("MSFT"), 60, callback=callback)
+        bar_agg = BarAggregator(Stock("MSFT"), 60, callback=self.callback)
 
         start_time = to_timestamp(datetime.datetime(2018, 10, 18, 9, 0, 0))
-        for x in range(0, 13):
-            print("time", start_time)
-            bar1 = BarData()
-            bar1.time = start_time
-            bar1.date = start_time
-            bar1.open = x
-            bar1.high = x+1
-            bar1.low = -x
-            bar1.close = -x-1
-            bar1.volume = 1
-            bar1.average = 0.
-            bar1.hasGaps = ""
-            bar1.barCount = 0
-            bar_agg.add_bar(barDataToDataFrame(bar1))
-            start_time += 5
-        self.assertTrue(bar_received)
-        #assert bar_received
+        for bar in self.__generate_bar_series(start_time, 13):
+            bar_agg.add_bar(bar)
+        self.assertEqual(self.callback_count, 1)
 
     def test_offset_start(self):
-        global bar_received        
-        bar_received = False
-
-        def callback(bar, all_bars):
-            global bar_received
-            print("Foo")
-            bar_received = True
-
-        bar_agg = BarAggregator(Stock("MSFT"), 60, callback=callback)
+        bar_agg = BarAggregator(Stock("MSFT"), 60, callback=self.callback)
 
         start_time = to_timestamp(datetime.datetime(2018, 10, 18, 9, 0, 20))
-        for x in range(0, 20):
-            print("time", start_time)
-            bar1 = BarData()
-            bar1.time = start_time
-            bar1.date = start_time
-            bar1.open = x
-            bar1.high = x+1
-            bar1.low = -x
-            bar1.close = -x-1
-            bar1.volume = 1
-            bar1.average = 0.
-            bar1.hasGaps = ""
-            bar1.barCount = 0
-            bar_agg.add_bar(barDataToDataFrame(bar1))
-            start_time += 5
-        self.assertTrue(bar_received)
+        for bar in self.__generate_bar_series(start_time, 20):
+            bar_agg.add_bar(bar)
+        self.assertEqual(self.callback_count, 1)
 
     def test_5s_to_5min(self):
-        global bar_received        
-        bar_received = False
-
-        def callback(bar, all_bars):
-            global bar_received
-            print("Foo")
-            bar_received = True
-
-        bar_agg = BarAggregator(Stock("MSFT"), 5 * 60, callback=callback)
+        bar_agg = BarAggregator(Stock("MSFT"), 5 * 60, callback=self.callback)
 
         start_time = to_timestamp(datetime.datetime(2018, 10, 18, 9, 0, 0))
-        for x in range(0, 5*61):
-            print("time", start_time)
-            bar1 = BarData()
-            bar1.time = start_time
-            bar1.date = start_time
-            bar1.open = x
-            bar1.high = x+1
-            bar1.low = -x
-            bar1.close = -x-1
-            bar1.volume = 1
-            bar1.average = 0.
-            bar1.hasGaps = ""
-            bar1.barCount = 0
-            bar_agg.add_bar(barDataToDataFrame(bar1))
-            start_time += 5
-        self.assertTrue(bar_received)
-        #assert bar_received
-# if "__main__" == __name__:
-#     unittest.main()
+        for bar in self.__generate_bar_series(start_time, 60):
+            bar_agg.add_bar(bar)
+        self.assertEqual(self.callback_count, 1)
+
+if "__main__" == __name__:
+    unittest.main()
