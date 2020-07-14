@@ -5,6 +5,14 @@ from ats.util.util import get_user_file
 from enum import Enum
 from ats.sms.twilio import send_notification
 
+def snap_to_increment(price, min_tick):
+    return min_tick * (price + min_tick) // min_tick
+
+class BollingerBandwithStrategyState(Enum):
+    Looking = 1
+    Peaked = 2
+    Dipped = 3
+
 class Indicators(Enum):
     BollingerBands = 1
 
@@ -85,8 +93,9 @@ class InidicatorStrategy(Strategy):
             self.bar_manager.unsubscribe(self.indicator.contract)
 
 class BollingerBandwithStrategy(InidicatorStrategy):
-    def __init__(self, contract, allocation, min_tick, bottom_threshold=0.2, top_threshold=0.7, period=24):
+    def __init__(self, contract, allocation, min_tick=0.01, bottom_threshold=0.2, top_threshold=0.7, period=24):
         super().__init__(contract, allocation)
+        self.status = BollingerBandwithStrategyState.Looking
 
         self.has_dipped = False
         self.bottom_threshold = bottom_threshold
@@ -100,7 +109,7 @@ class BollingerBandwithStrategy(InidicatorStrategy):
         self.indicator = create_indicator(self, self.contract, { "type": Indicators.BollingerBands, "period": period })
         self.min_tick = min_tick
 
-    def check_buy_condition(self, augmented_bar):
+    def check_open_condition(self, augmented_bar):
         """
             The buy condition for this strategy is satisfied by two conditions:
 
@@ -108,21 +117,41 @@ class BollingerBandwithStrategy(InidicatorStrategy):
                 2. The price must then have broken above the bottom_threshold
 
         """
-        # Check if we have dipped below
+        # Check if we have dipped or peaked
         bband_percent = augmented_bar["indicators"][Indicators.BollingerBands][24]["percent"]
-        self.has_dipped = self.has_dipped or bband_percent < self.bottom_threshold 
 
-        # We want to buy when, after having dipped, we cross back above the threshold
-        return not self.order_placed and self.has_dipped and bband_percent >= self.bottom_threshold
+        if self.status == BollingerBandwithStrategyState.Looking:
+            if bband_percent < self.bottom_threshold:
+                self.status = BollingerBandwithStrategyState.Dipped
+            elif bband_percent > self.top_threshold:
+                self.status = BollingerBandwithStrategyState.Peaked
+            return False
 
-    def check_sell_condition(self, augmented_bar):
+        elif self.status == BollingerBandwithStrategyState.Dipped:
+            # We want to buy when, after having dipped, we cross back above the threshold
+            return bband_percent >= self.bottom_threshold
+
+        elif self.status == BollingerBandwithStrategyState.Peaked:            
+            return bband_percent <= self.top_threshold
+
+    def check_close_condition(self, augmented_bar):
         """
             The sell condtiion is that we have a bar that is at or above the top_threshold
 
             TODO: In the future we want to eliminate this check and allow the order to 
             float up.
         """
-        return augmented_bar["indicators"][Indicators.BollingerBands][24]["percent"] >= self.top_threshold
+        # Check if we have dipped or peaked
+        bband_percent = augmented_bar["indicators"][Indicators.BollingerBands][24]["percent"]
+
+        assert self.status != BollingerBandwithStrategyState.Looking
+        
+        if self.status == BollingerBandwithStrategyState.Dipped:
+            # We want to sell when we hit the top threshold
+            return bband_percent >= self.top_threshold
+        elif self.status == BollingerBandwithStrategyState.Peaked:            
+            return bband_percent <= self.bottom_threshold
+
 
     def on_tick(self, tick):
         """
@@ -160,25 +189,38 @@ class BollingerBandwithStrategy(InidicatorStrategy):
         top_of_band = augmented_bar["indicators"][Indicators.BollingerBands][24]["upper"]
         bottom_of_band = augmented_bar["indicators"][Indicators.BollingerBands][24]["lower"]
 
-        # Take profit at the upper threshold
-        profit = ((top_of_band - bottom_of_band) * self.top_threshold) + bottom_of_band
-        # Stop is if we break down below band.
-        stop = bottom_of_band
-
-        """
-        TODO: We should have a check for a minimum amount of profit and stop and make sure:
-            1. They aren't really close i.e. they should be X tick sizes away
-            2. That profit generates a profit worth taking the risk for
-            3. That stop isn't huge, consider a minimum $, % or other check along with computing it
-        """
-
         # TODO: this should compute based on self.allocation / price + fees
         self.qty_desired = 1
 
-        def snap_to_increment(price, min_tick):
-            return min_tick * (price + min_tick) // min_tick
+        if self.status == BollingerBandwithStrategyState.Dipped:              
+            # Take profit at the upper threshold
+            profit = ((top_of_band - bottom_of_band) * self.top_threshold) + bottom_of_band
+            # Stop is if we break down below band.
+            stop = bottom_of_band
 
-        market_order, profit_order, stop_order = self.order_manager.create_bracket_order(self.contract, self.qty_desired, snap_to_increment(profit, self.min_tick), snap_to_increment(stop, self.min_tick))
+            """
+            TODO: We should have a check for a minimum amount of profit and stop and make sure:
+                1. They aren't really close i.e. they should be X tick sizes away
+                2. That profit generates a profit worth taking the risk for
+                3. That stop isn't huge, consider a minimum $, % or other check along with computing it
+            """
+
+            market_order, profit_order, stop_order = self.order_manager.create_bracket_order(self.contract, self.qty_desired, snap_to_increment(profit, self.min_tick), snap_to_increment(stop, self.min_tick))
+        elif self.status == BollingerBandwithStrategyState.Peaked:
+            # Take profit at the bottom threshold
+            profit = ((top_of_band - bottom_of_band) * self.top_threshold) + bottom_of_band
+            # Stop is if we break down below band.
+            stop = bottom_of_band
+
+            """
+            TODO: We should have a check for a minimum amount of profit and stop and make sure:
+                1. They aren't really close i.e. they should be X tick sizes away
+                2. That profit generates a profit worth taking the risk for
+                3. That stop isn't huge, consider a minimum $, % or other check along with computing it
+            """
+
+            market_order, profit_order, stop_order = self.order_manager.create_bracket_order(self.contract, self.qty_desired, snap_to_increment(profit, self.min_tick), snap_to_increment(stop, self.min_tick))
+
         market_order.on_filled = self.positionFill
         profit_order.on_filled = self.positionClosed
         stop_order.on_filled = self.positionStoppedOut
@@ -187,7 +229,7 @@ class BollingerBandwithStrategy(InidicatorStrategy):
         self.order_manager.place_order(profit_order)
         self.order_manager.place_order(stop_order)
         self.order_placed = True
-        send_notification(f"Sending orders market, {profit} {stop}...")        
+        send_notification(f"{self.status}: Sending orders market, {profit} {stop}...")
 
     def close_position(self, augmented_bar):
         # TODO: Right now we are using bracket orders to close. So this isn't

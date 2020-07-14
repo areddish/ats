@@ -25,11 +25,11 @@ class Strategy:
         # Make buy / sell decision
         print(f"Stratgey has position: {self.position}")
         if (self.position):
-            if self.check_sell_condition(augmented_bar):
+            if self.check_close_condition(augmented_bar):
                 print(f"Stratgey has sell signal! SELL")
                 self.close_position(augmented_bar)
         else:
-           if self.check_buy_condition(augmented_bar):
+           if self.check_open_condition(augmented_bar):
                 print(f"Stratgey has buy signal! BUY")
                 self.open_position(augmented_bar)
 
@@ -43,11 +43,11 @@ class Strategy:
         if self.position and self.day_position:
             self.close_position()
 
-    def check_buy_condition(self, augmented_bar):
+    def check_open_condition(self, augmented_bar):
         assert not self.position
         return False
 
-    def check_sell_condition(self, augmented_bar):
+    def check_close_condition(self, augmented_bar):
         assert self.position
         return False
 
