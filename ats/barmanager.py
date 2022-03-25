@@ -1,4 +1,4 @@
-from .barutils import BarAggregator, BarData
+from .barutils import BarAggregator, BarData, BarDuration
 from .requests import RealTimeBarSubscription, RealTimeBarSubscriptionWithBackFill, HistoricalDataRequest
 
 from sqlalchemy import create_engine, event
@@ -6,16 +6,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, Integer, String, Float, DateTime
 
 import datetime
-from enum import Enum
 
 from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
-
-class BarDuration(Enum):
-    FiveSeconds = 5
-    OneMinute = 5 * 12
-    FiveMinutes = OneMinute * 5
-    FifeteenMinutes = FiveMinutes*3
 
 class BarObj(Base):
     __tablename__ = "bars"
@@ -52,7 +45,7 @@ class BarDb:
 
 
 class BarManager(object):
-    def __init__(self, broker, bardb):
+    def __init__(self, broker, bardb = None):
         self.aggregators = {}
         self.subscriptionRequests = {}
         self.broker = broker

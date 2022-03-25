@@ -2,11 +2,17 @@ from ibapi.common import BarData
 from pandas import DataFrame
 
 import datetime
+from enum import Enum
 
+class BarDuration(Enum):
+    FiveSeconds = 5
+    OneMinute = 5 * 12
+    FiveMinutes = OneMinute * 5
+    FifeteenMinutes = FiveMinutes*3
 
 class BarAggregator:
-    def __init__(self, contract, desiredTimeSpanInSeconds=60, callback=None, live=True):
-        self.timeSpanInSeconds = desiredTimeSpanInSeconds
+    def __init__(self, contract, desiredTimeSpanInSeconds=BarDuration.OneMinute, callback=None, live=True):
+        self.timeSpanInSeconds = desiredTimeSpanInSeconds.value if isinstance(desiredTimeSpanInSeconds, BarDuration) else desiredTimeSpanInSeconds
         self.current_bar = DataFrame()
         self.bars = DataFrame()
         self.callback = callback
