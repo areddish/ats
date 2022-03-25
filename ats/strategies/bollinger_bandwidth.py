@@ -6,7 +6,7 @@ from enum import Enum
 from ats.sms.twilio import send_notification
 
 def snap_to_increment(price, min_tick):
-    return min_tick * (price + min_tick) // min_tick
+    return min_tick * ((price + min_tick) // min_tick)
 
 class BollingerBandwithStrategyState(Enum):
     Looking = 1
@@ -108,6 +108,7 @@ class BollingerBandwithStrategy(InidicatorStrategy):
         # peroid minute bollinger bands
         self.indicator = create_indicator(self, self.contract, { "type": Indicators.BollingerBands, "period": period })
         self.min_tick = min_tick
+        print(__name__, "created")
 
     def check_open_condition(self, augmented_bar):
         """
@@ -117,6 +118,7 @@ class BollingerBandwithStrategy(InidicatorStrategy):
                 2. The price must then have broken above the bottom_threshold
 
         """
+        print(__name__, "check_open_condition")
         # Check if we have dipped or peaked
         bband_percent = augmented_bar["indicators"][Indicators.BollingerBands][24]["percent"]
 
@@ -160,6 +162,7 @@ class BollingerBandwithStrategy(InidicatorStrategy):
         pass
 
     def on_fill(self, qty):
+        print(__name__, "on_fill")
         self.position = qty > 0
 
         # We can get out of order events here, so if we always want
@@ -186,6 +189,7 @@ class BollingerBandwithStrategy(InidicatorStrategy):
             self.close_position()
 
     def open_position(self, augmented_bar):
+        print(__name__, "open_position")
         top_of_band = augmented_bar["indicators"][Indicators.BollingerBands][24]["upper"]
         bottom_of_band = augmented_bar["indicators"][Indicators.BollingerBands][24]["lower"]
 
@@ -205,8 +209,11 @@ class BollingerBandwithStrategy(InidicatorStrategy):
                 3. That stop isn't huge, consider a minimum $, % or other check along with computing it
             """
 
+            print("Dipped:", self.qty_desired, snap_to_increment(profit, self.min_tick), snap_to_increment(stop, self.min_tick))
             market_order, profit_order, stop_order = self.order_manager.create_bracket_order(self.contract, self.qty_desired, snap_to_increment(profit, self.min_tick), snap_to_increment(stop, self.min_tick))
         elif self.status == BollingerBandwithStrategyState.Peaked:
+            ## THIS IS WRONG!!!!
+            
             # Take profit at the bottom threshold
             profit = ((top_of_band - bottom_of_band) * self.top_threshold) + bottom_of_band
             # Stop is if we break down below band.
@@ -219,7 +226,12 @@ class BollingerBandwithStrategy(InidicatorStrategy):
                 3. That stop isn't huge, consider a minimum $, % or other check along with computing it
             """
 
-            market_order, profit_order, stop_order = self.order_manager.create_bracket_order(self.contract, self.qty_desired, snap_to_increment(profit, self.min_tick), snap_to_increment(stop, self.min_tick))
+            print("Peaked:", self.qty_desired, snap_to_increment(profit, self.min_tick), snap_to_increment(stop, self.min_tick))
+
+            ## TEMP WORK AROUND while debugging
+            # market_order, profit_order, stop_order = self.order_manager.create_bracket_order(self.contract, self.qty_desired, snap_to_increment(profit, self.min_tick), snap_to_increment(stop, self.min_tick))
+            self.status == BollingerBandwithStrategyState.Looking
+            return
 
         market_order.on_filled = self.positionFill
         profit_order.on_filled = self.positionClosed
@@ -230,6 +242,7 @@ class BollingerBandwithStrategy(InidicatorStrategy):
         self.order_manager.place_order(stop_order)
         self.order_placed = True
         send_notification(f"{self.status}: Sending orders market, {profit} {stop}...")
+        self.status == BollingerBandwithStrategyState.Looking
 
     def close_position(self, augmented_bar):
         # TODO: Right now we are using bracket orders to close. So this isn't

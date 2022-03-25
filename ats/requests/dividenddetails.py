@@ -27,12 +27,14 @@ class DividendDetailsRequest(Request):
                 Example: 0.83,0.92,20130219,0.23
             '''
             print("DIVIDENDS: ",tick_type, *data)
-            self.next_date = datetime.strptime(data[2], "%Y%m%d")
-            self.next_payout = float(data[3])
+            self.next_date = datetime.strptime(data[2], "%Y%m%d") if data[2] else None
+            self.next_payout = float(data[3]) if data[3] else 0
             self.complete()
 
     def on_error(self, error_code, errorString):
         # TODO:
+        if (error_code == 200):
+            print('Needs exchange')
         self.next_date = None
         self.next_payout = 0
         self.complete()

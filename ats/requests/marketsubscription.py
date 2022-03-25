@@ -9,8 +9,9 @@ class RealTimeMarketSubscription(Request):
     def on_data(self, **kwargs):
         #assert self.request_id == kwargs["reqId"]
 
-        print (f"Tick:")
-
+        #print (f"Tick:", kwargs)
+        pass
+    
     def complete(self, **kwargs):
         # Called when subscription cancelled
         print (f"Cancelling: {self.request_id} for {self.contract.symbol}")
