@@ -12,7 +12,8 @@ tickers_that_need_primary_exchange = {
     "MSFT": "NASDAQ",
     "CSCO": "NASDAQ",
     "INTC": "NASDAQ",
-    "GLD": "ARCA"
+    "GLD": "ARCA",
+    "CAT": "NYSE"
 }
 
 
