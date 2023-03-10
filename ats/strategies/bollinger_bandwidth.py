@@ -15,6 +15,7 @@ class BollingerBandwithStrategyState(Enum):
 
 class Indicators(Enum):
     BollingerBands = 1
+    RSI = 2
 
 class Indicator():
     def __init__(self, owner, contract, type):

@@ -51,14 +51,15 @@ if "__main__" == __name__:
         trader.handle_request(mkt_sub)
 
         # spy_strategy = BollingerBandwithStrategy(spy, bar_man)
-        strat = BollingerBandwithStrategy(spy, 500, spy_details.details.minTick)
+        # strat = BollingerBandwithStrategy(spy, 500, spy_details.details.minTick)
 
         ## HOW TO EXIT?
-        strat.run(trader)
+        # strat.run(trader)
+        trader.run()
         
         print ("Unsubscribing...")
-        # bar_man.unsubscribe(spy)
-        # trader.cancel_request(mkt_sub)
+        bar_man.unsubscribe(spy)
+        trader.cancel_request(mkt_sub)
     except KeyboardInterrupt:
         print("Interrupt! Closing...")
         print("Sending Disconnect. ")
