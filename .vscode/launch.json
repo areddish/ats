@@ -18,6 +18,15 @@
             "request": "launch",
             "program": "${workspaceRoot}/app/single_quote.py",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Historical SPY",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}\\app\\historical.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}\\app",
+            "args": ["-c","SPY","-s","8-18-2023","-d","c:\\stock_data"]
         }
     ]
 }

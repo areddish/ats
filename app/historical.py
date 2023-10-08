@@ -28,13 +28,13 @@ if "__main__" == __name__:
     arg_parser.add_argument("-c", "--contract", action="store",
                             type=str, help="Contract symbol", dest="symbol", default="AMZN")
     arg_parser.add_argument("-s", "--start", action="store",
-                            type=datetime.datetime, help="Start time", dest="start", default=None)
-    arg_parser.add_argument("-e", "--end", action="store", type=datetime.datetime,
+                            type=lambda d: datetime.datetime.strptime(d, "%m-%d-%Y"), help="Start time mm-dd-yyyy", dest="start", default=None)
+    arg_parser.add_argument("-e", "--end", action="store", type=lambda d: datetime.datetime.strptime(d, "%m-%d-%Y"),
                             help="End time", dest="end", default=datetime.datetime.now())
     args = arg_parser.parse_args()
 
-    if (DELTA_OFFSET != 0):
-        raise EnvironmentError
+    # if (DELTA_OFFSET != 0):
+    #     raise EnvironmentError
 
     print("Data Collection Tool")
     print(f"Data Directory: {args.data_dir}")
@@ -56,7 +56,7 @@ if "__main__" == __name__:
 
     try:
         broker = BrokerPlatform(args.port, args.id)
-        broker.setConnOptions("+PACEAPI")
+        #broker.setConnOptions("+PACEAPI")
         broker.connect()
 
         start = datetime.datetime.now()
@@ -68,16 +68,19 @@ if "__main__" == __name__:
 
         print(f"Available from:")
         
-        start = args.start
+        current = args.start
+        while current > datetime.datetime(2013, 8, 19):
+            print(f"Requesting 1 bar days from {current.strftime('%m-%d-%Y')}")
+            request = HistoricalDataRequest(Stock(args.symbol), current, duration="5 D")
+            request.set_data_folder(symbol_dir)
+            broker.handle_request(request)
+            request.event.wait()
+            current -= datetime.timedelta(days=7)
 
-        print(f"Requesting 1 bar days from {start.strftime('%m-%d-%Y')}")
-        request = HistoricalDataRequest(Stock(args.symbol), start, "5 S", "5 s")
-        request.set_data_folder(symbol_dir)
-        broker.handle_request(request)
-
-        with open(os.path.join(self.folder, f"{self.symbol}-{self.end.strftime('%m-%d-%Y')}.txt"), "wt") as data_file:
-            for b in request.bars:
-                print(
-                    f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
+        broker.disconnect()
+        # with open(os.path.join(args.data_dir, f"{args.symbol}-{args.end.strftime('%m-%d-%Y')}.txt"), "wt") as data_file:
+        #     for b in request.bars:
+        #         print(
+        #             f"{b.date},{b.open},{b.high},{b.low},{b.close},{b.volume},{b.barCount}", file=data_file)
     except KeyboardInterrupt:
         print("Interrupt! Closing...")

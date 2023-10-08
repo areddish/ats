@@ -122,6 +122,7 @@ class BrokerPlatform(RealTimeBarMixin, HistoricalDataMixin, EWrapper):
 
         if self.wait_for_account:
             # Start getting account updates
+            print("Look for account updates!!!")
             for account_name in self.account_manager.accounts:
                 self.client.reqAccountUpdates(True, account_name)
 
@@ -224,6 +225,10 @@ class BrokerPlatform(RealTimeBarMixin, HistoricalDataMixin, EWrapper):
     def cancel_order(self, order):
         self.client.cancelOrder(order.orderId)
 
+    def load_all_accounts(self):
+        # Wait for all accounts to be marked loaded
+        self.account_manager.wait_for_load()
+        
     # def reqRealTimeBars(self, reqId, contract, barSize: int,
     #                     whatToShow: str, useRTH: bool,
     #                     realTimeBarsOptions):
@@ -450,8 +455,12 @@ class BrokerPlatform(RealTimeBarMixin, HistoricalDataMixin, EWrapper):
     def managedAccounts(self, accountsList: str):
         """Receives a comma-separated string with the managed account ids."""
         self.logAnswer(current_fn_name(), vars())
+        print("managedAccounts!!!")
         for account_name in list(filter(lambda x: x, accountsList.split(","))):
                 self.account_manager.add_account(account_name)
+                if self.wait_for_account:
+                    # Start getting account updates
+                    self.client.reqAccountUpdates(True, account_name)
 
     def receiveFA(self, faData: FaDataType, cxml: str):
         """ receives the Financial Advisor's configuration available in the TWS

@@ -23,14 +23,14 @@ class Strategy:
 
     def on_bar(self, augmented_bar):
         # Make buy / sell decision
-        print(f"Stratgey has position: {self.position}")
+        print(f"Strategy has position: {self.position}")
         if (self.position):
             if self.check_close_condition(augmented_bar):
-                print(f"Stratgey has sell signal! SELL")
+                print(f"Strategy has sell signal! SELL")
                 self.close_position(augmented_bar)
         else:
            if self.check_open_condition(augmented_bar):
-                print(f"Stratgey has buy signal! BUY")
+                print(f"Strategy has buy signal! BUY")
                 self.open_position(augmented_bar)
 
     def on_fill(self, qty):

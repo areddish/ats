@@ -14,9 +14,15 @@ class HistoricalDataRequest(Request):
         self.bar_size = bar_size
         self.keep_updated = keep_updated
         self.on_complete = None
+        self.file = None
 
     def set_data_folder(self, folder):
         self.folder = folder
+        if self.file:
+            self.file.close()
+
+        self.file = open(os.path.join(self.folder, f"{self.contract.symbol}-{self.end.strftime('%m-%d-%Y')}.txt"), "wt") 
+        self.write_header = True
 
     def on_error(self, error_code, errorString):
         # Historical Market Data Service error message:HMDS query returned no data: GE@SMART Trades
@@ -26,15 +32,26 @@ class HistoricalDataRequest(Request):
         return False
 
     def on_data(self, request_id, bar):
+        print("BAR: ", bar.columns, bar)
         assert self.request_id == request_id
         self.bars = self.bars.append(bar, verify_integrity=True)
+        if self.file:            
+            print(bar.to_csv(header=self.write_header), file=self.file, end="")
+            self.write_header = False
+
 
     def complete(self, **kwargs):
         # with open(os.path.join(self.folder, f"{self.symbol}-{self.end.strftime('%m-%d-%Y')}.txt"), "wt") as data_file:
         #     for b in self.bars:
         #         print(
         #             f"{b.date} {b.open} {b.high} {b.low} {b.close} {b.volume} {b.barCount}", file=data_file)
+        if self.file:
+            self.file.close()
+            self.file = None
+
         print("Complete:", kwargs["start"], "-", kwargs["end"])
         if self.on_complete:            
             self.on_complete()
             self.on_complete = None
+
+        super().complete(**kwargs)
